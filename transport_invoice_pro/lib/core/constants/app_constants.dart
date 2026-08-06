@@ -6,6 +6,9 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
   
+  /// Dynamic copyright notice updating automatically per calendar year
+  static String get copyrightNotice => '© ${DateTime.now().year} $appName. All rights reserved.';
+  
   // Support & Company Details Defaults
   static const String defaultCurrencySymbol = '₹';
   static const String defaultCurrencyCode = 'INR';
