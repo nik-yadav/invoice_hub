@@ -1,0 +1,135 @@
+// Prisma Schema for Transport Invoice Pro (Supabase PostgreSQL - Fully Dynamic User-Wise)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String     @id @default(uuid())
+  email       String     @unique
+  password    String
+  fullName    String?
+  companyName String?
+  phone       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  profile     Profile?
+  firms       Firm[]
+  customers   Customer[]
+  vehicles    Vehicle[]
+  invoices    Invoice[]
+}
+
+model Profile {
+  id                String   @id @default(uuid())
+  userId            String?  @unique
+  fullName          String   @default("")
+  companyName       String   @default("")
+  email             String   @default("")
+  phone             String   @default("")
+  gstin             String   @default("")
+  address           String   @default("")
+  transportLicense  String   @default("")
+  subscriptionPlan  String   @default("Standard Plan")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Firm {
+  id            String    @id @default(uuid())
+  userId        String?
+  businessName  String
+  ownerName     String?
+  phone         String?
+  email         String?
+  gstin         String?
+  pan           String?
+  address       String?
+  city          String?
+  state         String?
+  pin           String?
+  logoPath      String?
+  signaturePath String?
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+}
+
+model Customer {
+  id           String    @id @default(uuid())
+  userId       String?
+  customerName String
+  phone        String?
+  gstin        String?
+  address      String?
+  city         String?
+  state        String?
+  pin          String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+}
+
+model Vehicle {
+  id              String    @id @default(uuid())
+  vehicleNumber   String
+  userId          String?
+  type            String    @default("Open Truck")
+  capacity        Float     @default(0.0)
+  driverName      String?
+  driverPhone     String?
+  insuranceNumber String?
+  fitnessExpiry   String?
+  status          String    @default("available")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices        Invoice[]
+}
+
+model Invoice {
+  id                   String    @id @default(uuid())
+  userId               String?
+  invoiceNumber        String    @unique
+  invoiceDate          DateTime  @default(now())
+  tripDate             DateTime  @default(now())
+  firmId               String?
+  customerId           String?
+  vehicleId            String?
+  sourcePin            String?
+  sourceCity           String?
+  sourceDistrict       String?
+  sourceState          String?
+  sourceAddress        String?
+  destinationPin       String?
+  destCity             String?
+  destDistrict         String?
+  destState            String?
+  destAddress          String?
+  materialDescription  String?
+  weight               Float?
+  transportationCharge Float     @default(0.0)
+  customPartiesFields  String?   @default("{}")
+  customChargesFields  String?   @default("{}")
+  totalAmount          Float     @default(0.0)
+  paymentMethod        String    @default("cash")
+  paymentStatus        String    @default("pending")
+  remarks              String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firm     Firm?     @relation(fields: [firmId], references: [id], onDelete: SetNull)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+}

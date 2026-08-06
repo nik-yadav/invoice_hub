@@ -1,0 +1,112 @@
+const { prisma } = require('../config/prisma');
+
+/**
+ * GET /api/v1/profile
+ * Get authenticated user's business profile
+ */
+exports.getProfile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    let profile = null;
+
+    if (userId) {
+      profile = await prisma.profile.findUnique({ where: { userId } });
+    }
+
+    if (!profile) {
+      // Create fresh profile dynamically from user token/data
+      profile = await prisma.profile.create({
+        data: {
+          userId,
+          fullName: req.user?.fullName || '',
+          companyName: req.user?.companyName || '',
+          email: req.user?.email || '',
+          phone: '',
+          gstin: '',
+          address: '',
+          transportLicense: '',
+          subscriptionPlan: 'Standard Plan',
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        full_name: profile.fullName || req.user?.fullName || '',
+        company_name: profile.companyName || req.user?.companyName || '',
+        email: profile.email || req.user?.email || '',
+        phone: profile.phone || '',
+        gstin: profile.gstin || '',
+        address: profile.address || '',
+        transport_license: profile.transportLicense || '',
+        subscription_plan: profile.subscriptionPlan || 'Standard Plan',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/v1/profile
+ * Update authenticated user's business profile
+ */
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    let profile = userId ? await prisma.profile.findUnique({ where: { userId } }) : null;
+
+    const {
+      full_name,
+      company_name,
+      email,
+      phone,
+      gstin,
+      address,
+      transport_license,
+      subscription_plan,
+    } = req.body;
+
+    const payload = {
+      fullName: full_name,
+      companyName: company_name,
+      email,
+      phone,
+      gstin,
+      address,
+      transportLicense: transport_license,
+      subscriptionPlan: subscription_plan,
+    };
+
+    Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
+
+    if (!profile) {
+      profile = await prisma.profile.create({
+        data: { userId, ...payload },
+      });
+    } else {
+      profile = await prisma.profile.update({
+        where: { id: profile.id },
+        data: payload,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        full_name: profile.fullName,
+        company_name: profile.companyName,
+        email: profile.email,
+        phone: profile.phone,
+        gstin: profile.gstin,
+        address: profile.address,
+        transport_license: profile.transportLicense,
+        subscription_plan: profile.subscriptionPlan,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
