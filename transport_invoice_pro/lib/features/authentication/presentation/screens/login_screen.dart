@@ -7,6 +7,7 @@ import '../../../../core/constants/ui_constants.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/auth_header.dart';
@@ -43,12 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Successfully logged in! Redirecting...'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppToast.showSuccess(context, 'Successfully logged in! Redirecting...');
       context.goNamed(RouteNames.dashboard);
     }
   }
@@ -59,16 +55,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
 
-    // Listen for auth errors to present feedback SnackBar
+    // Listen for auth errors to present feedback toast
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next.hasError && !next.isLoading) {
-        final errorMessage = next.error.toString();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: theme.colorScheme.error,
-          ),
-        );
+        final errorMessage = next.error.toString().replaceAll('Exception: ', '');
+        AppToast.showError(context, errorMessage);
       }
     });
 
@@ -90,6 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 hint: 'name@transportcompany.com',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 validator: Validators.validateEmail,
                 prefixIcon: const Icon(Icons.email_outlined),
               ),
@@ -99,6 +91,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 hint: '••••••••',
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _handleLogin(),
                 validator: (value) => Validators.validateRequired(value, fieldName: 'Password'),
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(

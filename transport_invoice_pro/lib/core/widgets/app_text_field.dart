@@ -10,6 +10,8 @@ class AppTextField extends StatelessWidget {
   final String? initialValue;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
+  final TextInputAction? textInputAction;
   final TextInputType keyboardType;
   final bool obscureText;
   final bool readOnly;
@@ -30,6 +32,8 @@ class AppTextField extends StatelessWidget {
     this.initialValue,
     this.validator,
     this.onChanged,
+    this.onFieldSubmitted,
+    this.textInputAction,
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
     this.readOnly = false,
@@ -57,12 +61,14 @@ class AppTextField extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: UIConstants.spacing6 ?? 6.0),
+        const SizedBox(height: 6.0),
         TextFormField(
           controller: controller,
           initialValue: initialValue,
           validator: validator,
           onChanged: onChanged,
+          onFieldSubmitted: onFieldSubmitted,
+          textInputAction: textInputAction,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
           obscureText: obscureText,

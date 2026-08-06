@@ -7,6 +7,7 @@ import '../../../../core/constants/ui_constants.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_card.dart';
 import '../widgets/auth_header.dart';
@@ -56,12 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully! Welcome to Transport Invoice Pro.'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppToast.showSuccess(context, 'Account created successfully! Welcome to Transport Invoice Pro.');
       context.goNamed(RouteNames.dashboard);
     }
   }
@@ -74,13 +70,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next.hasError && !next.isLoading) {
-        final errorMessage = next.error.toString();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: theme.colorScheme.error,
-          ),
-        );
+        final errorMessage = next.error.toString().replaceAll('Exception: ', '');
+        AppToast.showError(context, errorMessage);
       }
     });
 
@@ -101,6 +92,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 label: 'Full Name',
                 hint: 'John Doe',
                 controller: _fullNameController,
+                textInputAction: TextInputAction.next,
                 validator: (value) => Validators.validateRequired(value, fieldName: 'Full Name'),
                 prefixIcon: const Icon(Icons.person_outline),
               ),
@@ -109,6 +101,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 label: 'Transport / Company Name',
                 hint: 'Logistics India Pvt Ltd',
                 controller: _companyNameController,
+                textInputAction: TextInputAction.next,
                 validator: (value) => Validators.validateRequired(value, fieldName: 'Company Name'),
                 prefixIcon: const Icon(Icons.business_outlined),
               ),
@@ -118,6 +111,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 hint: '9876543210',
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
                 validator: Validators.validatePhone,
                 prefixIcon: const Icon(Icons.phone_outlined),
               ),
@@ -127,6 +121,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 hint: 'name@transportcompany.com',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 validator: Validators.validateEmail,
                 prefixIcon: const Icon(Icons.email_outlined),
               ),
@@ -136,6 +131,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 hint: '••••••••',
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.next,
                 validator: (value) {
                   if (value == null || value.length < 6) {
                     return 'Password must be at least 6 characters long';
@@ -160,6 +156,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 hint: '••••••••',
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _handleRegister(),
                 validator: (value) {
                   if (value != _passwordController.text) {
                     return 'Passwords do not match';

@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/error_state_widget.dart';
 import '../../../../core/widgets/list_skeleton_widget.dart';
+import '../../../../core/widgets/app_skeleton.dart';
 import '../../domain/models/vehicle_model.dart';
 import '../providers/vehicle_provider.dart';
 
@@ -89,7 +90,7 @@ class VehicleListScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const ListSkeletonWidget(),
+        loading: () => AppSkeleton.list(itemCount: 4),
         error: (err, st) => ErrorStateWidget(
           message: err.toString(),
           onRetry: () => ref.read(vehiclesProvider.notifier).loadVehicles(),

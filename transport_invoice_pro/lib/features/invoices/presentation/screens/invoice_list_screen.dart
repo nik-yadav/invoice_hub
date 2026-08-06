@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/error_state_widget.dart';
 import '../../../../core/widgets/list_skeleton_widget.dart';
+import '../../../../core/widgets/app_skeleton.dart';
 import '../../domain/models/invoice_model.dart';
 import '../providers/invoice_provider.dart';
 import 'package:printing/printing.dart';
@@ -109,7 +110,7 @@ class InvoiceListScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const ListSkeletonWidget(),
+        loading: () => AppSkeleton.list(itemCount: 5),
         error: (err, st) => ErrorStateWidget(
           message: err.toString(),
           onRetry: () => ref.read(invoicesProvider.notifier).loadInvoices(),
