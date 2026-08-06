@@ -544,6 +544,12 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.info_outline,
                         title: 'App Version',
                         value: '${AppConstants.appName} v${AppConstants.appVersion} (${AppConstants.buildNumber})',
+                      ),
+                      _buildInfoTile(
+                        context,
+                        icon: Icons.copyright_rounded,
+                        title: 'Legal Copyright',
+                        value: AppConstants.copyrightNotice,
                         isLast: true,
                       ),
                     ],
@@ -558,6 +564,17 @@ class ProfileScreen extends ConsumerWidget {
                   onPressed: () => _handleLogout(context, ref),
                 ),
                 const SizedBox(height: UIConstants.spacing20),
+
+                // 6. Dynamic Footer Copyright
+                Center(
+                  child: Text(
+                    AppConstants.copyrightNotice,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: UIConstants.spacing16),
               ],
             ),
           ),
