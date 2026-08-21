@@ -27,25 +27,28 @@ class QuickActionCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(UIConstants.spacing16),
+      padding: const EdgeInsets.symmetric(horizontal: UIConstants.spacing16, vertical: UIConstants.spacing12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(UIConstants.spacing12),
+            padding: const EdgeInsets.all(UIConstants.spacing10 ?? 10.0),
             decoration: BoxDecoration(
               color: iconBackgroundColor,
               borderRadius: UIConstants.borderRadiusMedium,
             ),
             child: Icon(
               icon,
-              size: 24,
+              size: 22,
               color: iconColor,
             ),
           ),
-          const SizedBox(width: UIConstants.spacing14 ?? 14.0),
+          const SizedBox(width: 14.0),
           Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   title,

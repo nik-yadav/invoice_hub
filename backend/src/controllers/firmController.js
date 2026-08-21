@@ -114,9 +114,62 @@ exports.updateFirm = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Firm not found' });
     }
 
+    const {
+      businessName,
+      business_name,
+      ownerName,
+      owner_name,
+      phone,
+      email,
+      gstin,
+      pan,
+      address,
+      city,
+      state,
+      pin,
+      logoPath,
+      logo_path,
+      signaturePath,
+      signature_path,
+      isDefault,
+      is_default,
+    } = req.body;
+
+    const updateData = {};
+    if (businessName !== undefined || business_name !== undefined) {
+      updateData.businessName = businessName !== undefined ? businessName : business_name;
+    }
+    if (ownerName !== undefined || owner_name !== undefined) {
+      updateData.ownerName = ownerName !== undefined ? ownerName : owner_name;
+    }
+    if (phone !== undefined) updateData.phone = phone;
+    if (email !== undefined) updateData.email = email;
+    if (gstin !== undefined) updateData.gstin = gstin;
+    if (pan !== undefined) updateData.pan = pan;
+    if (address !== undefined) updateData.address = address;
+    if (city !== undefined) updateData.city = city;
+    if (state !== undefined) updateData.state = state;
+    if (pin !== undefined) updateData.pin = pin;
+    if (logoPath !== undefined || logo_path !== undefined) {
+      updateData.logoPath = logoPath !== undefined ? logoPath : logo_path;
+    }
+    if (signaturePath !== undefined || signature_path !== undefined) {
+      updateData.signaturePath = signaturePath !== undefined ? signaturePath : signature_path;
+    }
+    if (isDefault !== undefined || is_default !== undefined) {
+      const defaultFlag = Boolean(isDefault !== undefined ? isDefault : is_default);
+      updateData.isDefault = defaultFlag;
+      if (defaultFlag && existing.userId) {
+        await prisma.firm.updateMany({
+          where: { userId: existing.userId },
+          data: { isDefault: false },
+        });
+      }
+    }
+
     const firm = await prisma.firm.update({
       where: { id },
-      data: req.body,
+      data: updateData,
     });
 
     return res.status(200).json({ success: true, message: 'Firm updated successfully', data: firm });

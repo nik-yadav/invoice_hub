@@ -24,19 +24,20 @@ class CustomerModel {
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
     return CustomerModel(
       id: json['id'] as String?,
-      customerName: json['customer_name'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      gstin: json['gstin'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      state: json['state'] as String? ?? '',
-      pin: json['pin'] as String? ?? '',
+      customerName: (json['customerName'] ?? json['customer_name'] ?? '') as String,
+      phone: (json['phone'] ?? '') as String,
+      gstin: (json['gstin'] ?? '') as String,
+      address: (json['address'] ?? '') as String,
+      city: (json['city'] ?? '') as String,
+      state: (json['state'] ?? '') as String,
+      pin: (json['pin'] ?? '') as String,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'customerName': customerName,
       'customer_name': customerName,
       'phone': phone,
       'gstin': gstin,

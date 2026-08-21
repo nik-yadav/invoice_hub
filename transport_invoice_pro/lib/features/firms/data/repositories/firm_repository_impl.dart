@@ -41,39 +41,47 @@ class FirmRepositoryImpl implements FirmRepository {
 
   @override
   Future<void> addFirm(FirmModel firm) async {
+    FirmModel createdFirm = firm;
     try {
-      await ApiService.post('/firms', firm.toJson());
+      final response = await ApiService.post('/firms', firm.toJson());
+      if (response['success'] == true && response['data'] != null) {
+        createdFirm = FirmModel.fromJson(Map<String, dynamic>.from(response['data']));
+      }
     } catch (_) {}
 
     final firms = await localDataSource.getFirms();
-    if (firms.isEmpty || firm.isDefault) {
-      if (firm.isDefault) {
+    if (firms.isEmpty || createdFirm.isDefault) {
+      if (createdFirm.isDefault) {
         for (int i = 0; i < firms.length; i++) {
           firms[i] = firms[i].copyWith(isDefault: false);
         }
       } else {
-        firm = firm.copyWith(isDefault: true);
+        createdFirm = createdFirm.copyWith(isDefault: true);
       }
     }
-    firms.add(firm);
+    firms.add(createdFirm);
     await localDataSource.saveFirms(firms);
   }
 
   @override
   Future<void> updateFirm(FirmModel firm) async {
+    FirmModel updatedFirm = firm;
     try {
-      await ApiService.put('/firms/${firm.id}', firm.toJson());
+      final response = await ApiService.put('/firms/${firm.id}', firm.toJson());
+      if (response['success'] == true && response['data'] != null) {
+        updatedFirm = FirmModel.fromJson(Map<String, dynamic>.from(response['data']));
+      }
     } catch (_) {}
 
     final firms = await localDataSource.getFirms();
-    final index = firms.indexWhere((f) => f.id == firm.id);
+    final index = firms.indexWhere((f) => f.id == updatedFirm.id);
     if (index != -1) {
-      if (firm.isDefault) {
+      if (updatedFirm.isDefault) {
         for (int i = 0; i < firms.length; i++) {
           firms[i] = firms[i].copyWith(isDefault: false);
         }
       }
-      firms[index] = firm;
+      firms[index] = updatedFirm;
       if (!firms.any((f) => f.isDefault) && firms.isNotEmpty) {
         firms[0] = firms[0].copyWith(isDefault: true);
       }

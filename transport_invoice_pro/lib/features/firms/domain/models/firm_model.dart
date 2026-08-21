@@ -36,26 +36,28 @@ class FirmModel {
   factory FirmModel.fromJson(Map<String, dynamic> json) {
     return FirmModel(
       id: json['id'] as String?,
-      businessName: json['business_name'] as String? ?? '',
-      ownerName: json['owner_name'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      gstin: json['gstin'] as String? ?? '',
-      pan: json['pan'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      state: json['state'] as String? ?? '',
-      pin: json['pin'] as String? ?? '',
-      logoPath: json['logo_path'] as String?,
-      signaturePath: json['signature_path'] as String?,
-      isDefault: json['is_default'] as bool? ?? false,
+      businessName: (json['businessName'] ?? json['business_name'] ?? '') as String,
+      ownerName: (json['ownerName'] ?? json['owner_name'] ?? '') as String,
+      phone: (json['phone'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
+      gstin: (json['gstin'] ?? '') as String,
+      pan: (json['pan'] ?? '') as String,
+      address: (json['address'] ?? '') as String,
+      city: (json['city'] ?? '') as String,
+      state: (json['state'] ?? '') as String,
+      pin: (json['pin'] ?? '') as String,
+      logoPath: json['logoPath'] as String? ?? json['logo_path'] as String?,
+      signaturePath: json['signaturePath'] as String? ?? json['signature_path'] as String?,
+      isDefault: json['isDefault'] as bool? ?? json['is_default'] as bool? ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'businessName': businessName,
       'business_name': businessName,
+      'ownerName': ownerName,
       'owner_name': ownerName,
       'phone': phone,
       'email': email,
@@ -65,8 +67,11 @@ class FirmModel {
       'city': city,
       'state': state,
       'pin': pin,
+      'logoPath': logoPath,
       'logo_path': logoPath,
+      'signaturePath': signaturePath,
       'signature_path': signaturePath,
+      'isDefault': isDefault,
       'is_default': isDefault,
     };
   }

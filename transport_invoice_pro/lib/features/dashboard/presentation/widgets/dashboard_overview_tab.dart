@@ -190,9 +190,9 @@ class DashboardOverviewTab extends ConsumerWidget {
 
             // Quick Actions Grid
             ResponsiveLayout(
-              mobile: _buildQuickActionsGrid(context, crossAxisCount: 2, aspectRatio: 2.2),
-              tablet: _buildQuickActionsGrid(context, crossAxisCount: 3, aspectRatio: 3.2),
-              desktop: _buildQuickActionsGrid(context, crossAxisCount: 3, aspectRatio: 3.2),
+              mobile: _buildQuickActionsGrid(context, crossAxisCount: 1, aspectRatio: 4.8),
+              tablet: _buildQuickActionsGrid(context, crossAxisCount: 3, aspectRatio: 4.2),
+              desktop: _buildQuickActionsGrid(context, crossAxisCount: 3, aspectRatio: 5.0),
             ),
             const SizedBox(height: UIConstants.spacing24),
 
