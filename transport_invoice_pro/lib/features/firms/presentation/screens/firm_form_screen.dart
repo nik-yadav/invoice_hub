@@ -27,18 +27,41 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
 
+  List<PinCodeDetails> _pinOptions = [];
+  PinCodeDetails? _selectedPinOption;
+  bool _isLoadingPin = false;
+
+  void _onSelectLocation(PinCodeDetails details) {
+    setState(() {
+      _selectedPinOption = details;
+      _cityController.text = details.city;
+      _stateController.text = details.state;
+      _addressController.text = details.address;
+    });
+  }
+
   Future<void> _fetchPinDetails(String pin) async {
     if (pin.length == 6) {
-      final details = await PinCodeService.fetchDetails(pin);
-      if (details != null && mounted) {
+      setState(() {
+        _isLoadingPin = true;
+        _pinOptions = [];
+        _selectedPinOption = null;
+      });
+      final options = await PinCodeService.fetchAllDetails(pin);
+      if (mounted) {
         setState(() {
-          _cityController.text = details.city;
-          _stateController.text = details.state;
-          if (_addressController.text.isEmpty) {
-            _addressController.text = details.address;
+          _isLoadingPin = false;
+          _pinOptions = options;
+          if (options.isNotEmpty) {
+            _onSelectLocation(options.first);
           }
         });
       }
+    } else {
+      setState(() {
+        _pinOptions = [];
+        _selectedPinOption = null;
+      });
     }
   }
 
@@ -267,6 +290,38 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
                 onChanged: _fetchPinDetails,
                 validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
+              if (_isLoadingPin) ...[
+                const SizedBox(height: 8),
+                const LinearProgressIndicator(),
+                const SizedBox(height: 8),
+              ] else if (_pinOptions.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<PinCodeDetails>(
+                  value: _selectedPinOption,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Select Post Office / Area (${_pinOptions.length} available)',
+                    prefixIcon: Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  items: _pinOptions.map((opt) {
+                    return DropdownMenuItem<PinCodeDetails>(
+                      value: opt,
+                      child: Text(
+                        '${opt.name} (${opt.city}, ${opt.state})',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (selected) {
+                    if (selected != null) {
+                      _onSelectLocation(selected);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
               const SizedBox(height: 24),
               SwitchListTile(
                 title: const Text('Set as Default Firm'),

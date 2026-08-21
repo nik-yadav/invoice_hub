@@ -77,6 +77,85 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
   // Live Total
   double _totalAmount = 0.0;
 
+  // PIN Code Dropdown Options State
+  List<PinCodeDetails> _sourcePinOptions = [];
+  PinCodeDetails? _selectedSourcePinOption;
+  bool _isLoadingSourcePin = false;
+
+  List<PinCodeDetails> _destPinOptions = [];
+  PinCodeDetails? _selectedDestPinOption;
+  bool _isLoadingDestPin = false;
+
+  void _onSelectSourceLocation(PinCodeDetails details) {
+    setState(() {
+      _selectedSourcePinOption = details;
+      _sourceCityCtrl.text = details.city;
+      _sourceDistrictCtrl.text = details.district;
+      _sourceStateCtrl.text = details.state;
+      _sourceAddressCtrl.text = details.address;
+    });
+  }
+
+  void _onSelectDestLocation(PinCodeDetails details) {
+    setState(() {
+      _selectedDestPinOption = details;
+      _destCityCtrl.text = details.city;
+      _destDistrictCtrl.text = details.district;
+      _destStateCtrl.text = details.state;
+      _destAddressCtrl.text = details.address;
+    });
+  }
+
+  Future<void> _fetchPinDetails(String pin, bool isSource) async {
+    if (pin.length == 6) {
+      if (isSource) {
+        setState(() {
+          _isLoadingSourcePin = true;
+          _sourcePinOptions = [];
+          _selectedSourcePinOption = null;
+        });
+        final options = await PinCodeService.fetchAllDetails(pin);
+        if (mounted) {
+          setState(() {
+            _isLoadingSourcePin = false;
+            _sourcePinOptions = options;
+            if (options.isNotEmpty) {
+              _onSelectSourceLocation(options.first);
+            }
+          });
+        }
+      } else {
+        setState(() {
+          _isLoadingDestPin = true;
+          _destPinOptions = [];
+          _selectedDestPinOption = null;
+        });
+        final options = await PinCodeService.fetchAllDetails(pin);
+        if (mounted) {
+          setState(() {
+            _isLoadingDestPin = false;
+            _destPinOptions = options;
+            if (options.isNotEmpty) {
+              _onSelectDestLocation(options.first);
+            }
+          });
+        }
+      }
+    } else {
+      if (isSource) {
+        setState(() {
+          _sourcePinOptions = [];
+          _selectedSourcePinOption = null;
+        });
+      } else {
+        setState(() {
+          _destPinOptions = [];
+          _selectedDestPinOption = null;
+        });
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -182,27 +261,6 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
     setState(() {
       _totalAmount = trans + extraCharges;
     });
-  }
-
-  Future<void> _fetchPinDetails(String pin, bool isSource) async {
-    if (pin.length == 6) {
-      final details = await PinCodeService.fetchDetails(pin);
-      if (details != null && mounted) {
-        setState(() {
-          if (isSource) {
-            _sourceCityCtrl.text = details.city;
-            _sourceDistrictCtrl.text = details.district;
-            _sourceStateCtrl.text = details.state;
-            _sourceAddressCtrl.text = details.address;
-          } else {
-            _destCityCtrl.text = details.city;
-            _destDistrictCtrl.text = details.district;
-            _destStateCtrl.text = details.state;
-            _destAddressCtrl.text = details.address;
-          }
-        });
-      }
-    }
   }
 
   void _addCustomField(bool isPartyLevel) {
@@ -908,6 +966,8 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                             controller: _sourcePinCtrl,
                             label: 'Source PIN',
                             keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             onChanged: (val) => _fetchPinDetails(val, true),
                             validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
                           ),
@@ -932,6 +992,38 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                         ),
                       ],
                     ),
+                    if (_isLoadingSourcePin) ...[
+                      const SizedBox(height: 8),
+                      const LinearProgressIndicator(),
+                      const SizedBox(height: 8),
+                    ] else if (_sourcePinOptions.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<PinCodeDetails>(
+                        value: _selectedSourcePinOption,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Select Source Post Office / Area (${_sourcePinOptions.length} available)',
+                          prefixIcon: Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        items: _sourcePinOptions.map((opt) {
+                          return DropdownMenuItem<PinCodeDetails>(
+                            value: opt,
+                            child: Text(
+                              '${opt.name} (${opt.city}, ${opt.state})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (selected) {
+                          if (selected != null) {
+                            _onSelectSourceLocation(selected);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     const SizedBox(height: 16),
                     AppTextField(controller: _sourceAddressCtrl, label: 'Source Full Address (Auto-resolved)'),
                     const SizedBox(height: 24),
@@ -943,6 +1035,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                             label: 'Dest. PIN',
                             keyboardType: TextInputType.number,
                             maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             onChanged: (val) => _fetchPinDetails(val, false),
                             validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
                           ),
@@ -967,6 +1060,38 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                         ),
                       ],
                     ),
+                    if (_isLoadingDestPin) ...[
+                      const SizedBox(height: 8),
+                      const LinearProgressIndicator(),
+                      const SizedBox(height: 8),
+                    ] else if (_destPinOptions.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<PinCodeDetails>(
+                        value: _selectedDestPinOption,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Select Destination Post Office / Area (${_destPinOptions.length} available)',
+                          prefixIcon: Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        items: _destPinOptions.map((opt) {
+                          return DropdownMenuItem<PinCodeDetails>(
+                            value: opt,
+                            child: Text(
+                              '${opt.name} (${opt.city}, ${opt.state})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (selected) {
+                          if (selected != null) {
+                            _onSelectDestLocation(selected);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     const SizedBox(height: 16),
                     AppTextField(controller: _destAddressCtrl, label: 'Dest. Full Address (Auto-resolved)'),
                     const SizedBox(height: 32),
