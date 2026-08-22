@@ -80,6 +80,9 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
   String? _logoPath;
   String? _signaturePath;
   bool _isDefault = false;
+  bool _showPhoneOnInvoice = true;
+  bool _showGstinOnInvoice = true;
+  bool _showEmailOnInvoice = true;
 
   @override
   void initState() {
@@ -98,6 +101,9 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
     _logoPath = widget.firm?.logoPath;
     _signaturePath = widget.firm?.signaturePath;
     _isDefault = widget.firm?.isDefault ?? false;
+    _showPhoneOnInvoice = widget.firm?.showPhoneOnInvoice ?? true;
+    _showGstinOnInvoice = widget.firm?.showGstinOnInvoice ?? true;
+    _showEmailOnInvoice = widget.firm?.showEmailOnInvoice ?? true;
   }
 
   @override
@@ -166,6 +172,9 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
       logoPath: _logoPath,
       signaturePath: _signaturePath,
       isDefault: shouldBeDefault,
+      showPhoneOnInvoice: _showPhoneOnInvoice,
+      showGstinOnInvoice: _showGstinOnInvoice,
+      showEmailOnInvoice: _showEmailOnInvoice,
     );
 
     if (widget.firm == null) {
@@ -326,6 +335,30 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
                 const SizedBox(height: 12),
               ],
               const SizedBox(height: 24),
+              const Text('Invoice Display Options', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: const Text('Show Phone Number on Invoices'),
+                subtitle: const Text('Display phone number in firm header on PDF'),
+                value: _showPhoneOnInvoice,
+                onChanged: (val) => setState(() => _showPhoneOnInvoice = val),
+                contentPadding: EdgeInsets.zero,
+              ),
+              SwitchListTile(
+                title: const Text('Show GSTIN on Invoices'),
+                subtitle: const Text('Display GSTIN number in firm header on PDF'),
+                value: _showGstinOnInvoice,
+                onChanged: (val) => setState(() => _showGstinOnInvoice = val),
+                contentPadding: EdgeInsets.zero,
+              ),
+              SwitchListTile(
+                title: const Text('Show Email Address on Invoices'),
+                subtitle: const Text('Display email address in firm header on PDF'),
+                value: _showEmailOnInvoice,
+                onChanged: (val) => setState(() => _showEmailOnInvoice = val),
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
               SwitchListTile(
                 title: const Text('Set as Default Firm'),
                 subtitle: const Text('Use this firm for new invoices by default'),

@@ -129,8 +129,10 @@ class InvoicePdfGenerator {
                               pw.Text(firm.businessName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
                               pw.SizedBox(height: 3),
                               pw.Text(firm.address, style: const pw.TextStyle(fontSize: 8.5)),
-                              pw.Text('Phone: ${firm.phone}', style: const pw.TextStyle(fontSize: 8.5)),
-                              pw.Text('PAN: ${firm.pan}', style: const pw.TextStyle(fontSize: 8.5)),
+                              if (firm.showPhoneOnInvoice && firm.phone.isNotEmpty)
+                                pw.Text('Phone: ${firm.phone}', style: const pw.TextStyle(fontSize: 8.5)),
+                              if (firm.pan.isNotEmpty)
+                                pw.Text('PAN: ${firm.pan}', style: const pw.TextStyle(fontSize: 8.5)),
                             ],
                           ),
                         ],
@@ -138,8 +140,9 @@ class InvoicePdfGenerator {
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text('GSTIN: ${firm.gstin}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                          if (firm.email.isNotEmpty)
+                          if (firm.showGstinOnInvoice && firm.gstin.isNotEmpty)
+                            pw.Text('GSTIN: ${firm.gstin}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                          if (firm.showEmailOnInvoice && firm.email.isNotEmpty)
                             pw.Text('Email: ${firm.email}', style: const pw.TextStyle(fontSize: 8.5)),
                         ],
                       ),

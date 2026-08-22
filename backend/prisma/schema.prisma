@@ -25,41 +25,45 @@ model User {
 }
 
 model Profile {
-  id               String   @id @default(uuid())
-  userId           String?  @unique
-  fullName         String   @default("")
-  companyName      String   @default("")
-  email            String   @default("")
-  phone            String   @default("")
-  gstin            String   @default("")
-  address          String   @default("")
-  transportLicense String   @default("")
-  subscriptionPlan String   @default("Standard Plan")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                        String   @id @default(uuid())
+  userId                    String?  @unique
+  fullName                  String   @default("")
+  companyName               String   @default("")
+  email                     String   @default("")
+  phone                     String   @default("")
+  gstin                     String   @default("")
+  address                   String   @default("")
+  transportLicense          String   @default("")
+  subscriptionPlan          String   @default("Standard Plan")
+  enablePostOfficeSelection Boolean  @default(false)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  user                      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Firm {
-  id            String    @id @default(uuid())
-  businessName  String
-  ownerName     String?
-  phone         String?
-  email         String?
-  gstin         String?
-  pan           String?
-  address       String?
-  city          String?
-  state         String?
-  pin           String?
-  logoPath      String?
-  signaturePath String?
-  isDefault     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  invoices      Invoice[]
+  id                 String    @id @default(uuid())
+  businessName       String
+  ownerName          String?
+  phone              String?
+  email              String?
+  gstin              String?
+  pan                String?
+  address            String?
+  city               String?
+  state              String?
+  pin                String?
+  logoPath           String?
+  signaturePath      String?
+  isDefault          Boolean   @default(false)
+  showPhoneOnInvoice Boolean   @default(true)
+  showGstinOnInvoice Boolean   @default(true)
+  showEmailOnInvoice Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  userId             String?
+  user               User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices           Invoice[]
 }
 
 model Customer {

@@ -61,6 +61,12 @@ exports.createFirm = async (req, res, next) => {
       signature_path,
       isDefault,
       is_default,
+      showPhoneOnInvoice,
+      show_phone_on_invoice,
+      showGstinOnInvoice,
+      show_gstin_on_invoice,
+      showEmailOnInvoice,
+      show_email_on_invoice,
     } = req.body;
 
     const bName = businessName || business_name;
@@ -93,6 +99,9 @@ exports.createFirm = async (req, res, next) => {
         logoPath: logoPath || logo_path || null,
         signaturePath: signaturePath || signature_path || null,
         isDefault: defaultFlag,
+        showPhoneOnInvoice: showPhoneOnInvoice !== undefined ? showPhoneOnInvoice : (show_phone_on_invoice !== undefined ? show_phone_on_invoice : true),
+        showGstinOnInvoice: showGstinOnInvoice !== undefined ? showGstinOnInvoice : (show_gstin_on_invoice !== undefined ? show_gstin_on_invoice : true),
+        showEmailOnInvoice: showEmailOnInvoice !== undefined ? showEmailOnInvoice : (show_email_on_invoice !== undefined ? show_email_on_invoice : true),
       },
     });
 
@@ -133,6 +142,12 @@ exports.updateFirm = async (req, res, next) => {
       signature_path,
       isDefault,
       is_default,
+      showPhoneOnInvoice,
+      show_phone_on_invoice,
+      showGstinOnInvoice,
+      show_gstin_on_invoice,
+      showEmailOnInvoice,
+      show_email_on_invoice,
     } = req.body;
 
     const updateData = {};
@@ -155,6 +170,15 @@ exports.updateFirm = async (req, res, next) => {
     }
     if (signaturePath !== undefined || signature_path !== undefined) {
       updateData.signaturePath = signaturePath !== undefined ? signaturePath : signature_path;
+    }
+    if (showPhoneOnInvoice !== undefined || show_phone_on_invoice !== undefined) {
+      updateData.showPhoneOnInvoice = showPhoneOnInvoice !== undefined ? showPhoneOnInvoice : show_phone_on_invoice;
+    }
+    if (showGstinOnInvoice !== undefined || show_gstin_on_invoice !== undefined) {
+      updateData.showGstinOnInvoice = showGstinOnInvoice !== undefined ? showGstinOnInvoice : show_gstin_on_invoice;
+    }
+    if (showEmailOnInvoice !== undefined || show_email_on_invoice !== undefined) {
+      updateData.showEmailOnInvoice = showEmailOnInvoice !== undefined ? showEmailOnInvoice : show_email_on_invoice;
     }
     if (isDefault !== undefined || is_default !== undefined) {
       const defaultFlag = Boolean(isDefault !== undefined ? isDefault : is_default);

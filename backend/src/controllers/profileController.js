@@ -41,6 +41,7 @@ exports.getProfile = async (req, res, next) => {
         address: profile.address || '',
         transport_license: profile.transportLicense || '',
         subscription_plan: profile.subscriptionPlan || 'Standard Plan',
+        enable_post_office_selection: profile.enablePostOfficeSelection || false,
       },
     });
   } catch (error) {
@@ -66,6 +67,7 @@ exports.updateProfile = async (req, res, next) => {
       address,
       transport_license,
       subscription_plan,
+      enable_post_office_selection,
     } = req.body;
 
     const payload = {
@@ -77,6 +79,7 @@ exports.updateProfile = async (req, res, next) => {
       address,
       transportLicense: transport_license,
       subscriptionPlan: subscription_plan,
+      enablePostOfficeSelection: enable_post_office_selection,
     };
 
     Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
@@ -104,6 +107,7 @@ exports.updateProfile = async (req, res, next) => {
         address: profile.address,
         transport_license: profile.transportLicense,
         subscription_plan: profile.subscriptionPlan,
+        enable_post_office_selection: profile.enablePostOfficeSelection,
       },
     });
   } catch (error) {

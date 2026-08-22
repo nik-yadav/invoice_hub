@@ -15,6 +15,9 @@ class FirmModel {
   final String? logoPath;
   final String? signaturePath;
   final bool isDefault;
+  final bool showPhoneOnInvoice;
+  final bool showGstinOnInvoice;
+  final bool showEmailOnInvoice;
 
   FirmModel({
     String? id,
@@ -31,6 +34,9 @@ class FirmModel {
     this.logoPath,
     this.signaturePath,
     this.isDefault = false,
+    this.showPhoneOnInvoice = true,
+    this.showGstinOnInvoice = true,
+    this.showEmailOnInvoice = true,
   }) : id = id ?? const Uuid().v4();
 
   factory FirmModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +55,9 @@ class FirmModel {
       logoPath: json['logoPath'] as String? ?? json['logo_path'] as String?,
       signaturePath: json['signaturePath'] as String? ?? json['signature_path'] as String?,
       isDefault: json['isDefault'] as bool? ?? json['is_default'] as bool? ?? false,
+      showPhoneOnInvoice: json['showPhoneOnInvoice'] as bool? ?? json['show_phone_on_invoice'] as bool? ?? true,
+      showGstinOnInvoice: json['showGstinOnInvoice'] as bool? ?? json['show_gstin_on_invoice'] as bool? ?? true,
+      showEmailOnInvoice: json['showEmailOnInvoice'] as bool? ?? json['show_email_on_invoice'] as bool? ?? true,
     );
   }
 
@@ -73,6 +82,12 @@ class FirmModel {
       'signature_path': signaturePath,
       'isDefault': isDefault,
       'is_default': isDefault,
+      'showPhoneOnInvoice': showPhoneOnInvoice,
+      'show_phone_on_invoice': showPhoneOnInvoice,
+      'showGstinOnInvoice': showGstinOnInvoice,
+      'show_gstin_on_invoice': showGstinOnInvoice,
+      'showEmailOnInvoice': showEmailOnInvoice,
+      'show_email_on_invoice': showEmailOnInvoice,
     };
   }
 
@@ -90,6 +105,9 @@ class FirmModel {
     String? logoPath,
     String? signaturePath,
     bool? isDefault,
+    bool? showPhoneOnInvoice,
+    bool? showGstinOnInvoice,
+    bool? showEmailOnInvoice,
   }) {
     return FirmModel(
       id: id,
@@ -106,6 +124,9 @@ class FirmModel {
       logoPath: logoPath ?? this.logoPath,
       signaturePath: signaturePath ?? this.signaturePath,
       isDefault: isDefault ?? this.isDefault,
+      showPhoneOnInvoice: showPhoneOnInvoice ?? this.showPhoneOnInvoice,
+      showGstinOnInvoice: showGstinOnInvoice ?? this.showGstinOnInvoice,
+      showEmailOnInvoice: showEmailOnInvoice ?? this.showEmailOnInvoice,
     );
   }
 }
