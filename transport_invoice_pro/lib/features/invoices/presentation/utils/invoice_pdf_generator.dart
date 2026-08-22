@@ -220,7 +220,10 @@ class InvoicePdfGenerator {
                               crossAxisAlignment: pw.CrossAxisAlignment.start,
                               children: [
                                 pw.Text('Source Station:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-                                pw.Text(invoice.sourceAddress, style: const pw.TextStyle(fontSize: 8)),
+                                pw.Text(
+                                  _formatStation(invoice.sourceCity, invoice.sourceState, invoice.sourceAddress),
+                                  style: const pw.TextStyle(fontSize: 8),
+                                ),
                               ],
                             ),
                           ),
@@ -230,7 +233,10 @@ class InvoicePdfGenerator {
                               crossAxisAlignment: pw.CrossAxisAlignment.start,
                               children: [
                                 pw.Text('Destination Station:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-                                pw.Text(invoice.destAddress, style: const pw.TextStyle(fontSize: 8)),
+                                pw.Text(
+                                  _formatStation(invoice.destCity, invoice.destState, invoice.destAddress),
+                                  style: const pw.TextStyle(fontSize: 8),
+                                ),
                               ],
                             ),
                           ),
@@ -415,5 +421,16 @@ class InvoicePdfGenerator {
   static String _formatCurrency(double amount) {
     final formatter = NumberFormat('#,##,##0.00', 'en_IN');
     return 'Rs. ${formatter.format(amount)}';
+  }
+
+  static String _formatStation(String city, String state, String address) {
+    final cityState = [city, state].where((s) => s.trim().isNotEmpty).join(', ');
+    final cleanAddr = address.trim();
+    if (cleanAddr.isEmpty || cleanAddr == cityState) {
+      return cityState.isNotEmpty ? cityState : 'N/A';
+    }
+    if (cityState.isEmpty) return cleanAddr;
+    if (cleanAddr.contains(cityState)) return cleanAddr;
+    return '$cityState ($cleanAddr)';
   }
 }

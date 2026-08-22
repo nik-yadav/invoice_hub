@@ -102,6 +102,12 @@ class DashboardOverviewTab extends ConsumerWidget {
             },
           );
         },
+        onEdit: () {
+          context.pushNamed(
+            RouteNames.editInvoice,
+            extra: i,
+          );
+        },
         onShare: () async {
           final pdfBytes = await InvoicePdfGenerator.generate(
             invoice: i,

@@ -14,6 +14,7 @@ class RecentInvoiceItem {
   final DateTime date;
   final String status; // 'Paid', 'Pending', 'Overdue'
   final VoidCallback? onShare;
+  final VoidCallback? onEdit;
   final VoidCallback? onTap;
 
   const RecentInvoiceItem({
@@ -25,6 +26,7 @@ class RecentInvoiceItem {
     required this.date,
     required this.status,
     this.onShare,
+    this.onEdit,
     this.onTap,
   });
 }
@@ -147,8 +149,16 @@ class RecentInvoicesCard extends StatelessWidget {
                             _buildStatusBadge(theme, item.status),
                           ],
                         ),
+                        if (item.onEdit != null) ...[
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryBlue),
+                            tooltip: 'Edit Invoice',
+                            onPressed: item.onEdit,
+                          ),
+                        ],
                         if (item.onShare != null) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           IconButton(
                             icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primaryBlue),
                             tooltip: 'Share PDF',

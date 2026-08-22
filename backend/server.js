@@ -33,14 +33,17 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Health Check Endpoint
-app.get('/health', (req, res) => {
+const healthCheckHandler = (req, res) => {
   res.status(200).json({
     status: 'OK',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     service: 'Transport Invoice Pro API (Prisma ORM)',
   });
-});
+};
+
+app.get('/health', healthCheckHandler);
+app.get('/api/v1/health', healthCheckHandler);
 
 app.get('/', (req, res) => {
   res.status(200).json({

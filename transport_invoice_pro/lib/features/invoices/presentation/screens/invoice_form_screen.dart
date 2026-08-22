@@ -364,12 +364,16 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
         sourceCity: _sourceCityCtrl.text,
         sourceDistrict: _sourceDistrictCtrl.text,
         sourceState: _sourceStateCtrl.text,
-        sourceAddress: _sourceAddressCtrl.text,
+        sourceAddress: _sourceAddressCtrl.text.trim().isNotEmpty
+            ? _sourceAddressCtrl.text.trim()
+            : '${_sourceCityCtrl.text.trim()}, ${_sourceStateCtrl.text.trim()}',
         destinationPin: _destPinCtrl.text,
         destCity: _destCityCtrl.text,
         destDistrict: _destDistrictCtrl.text,
         destState: _destStateCtrl.text,
-        destAddress: _destAddressCtrl.text,
+        destAddress: _destAddressCtrl.text.trim().isNotEmpty
+            ? _destAddressCtrl.text.trim()
+            : '${_destCityCtrl.text.trim()}, ${_destStateCtrl.text.trim()}',
         materialDescription: _materialCtrl.text.isNotEmpty ? _materialCtrl.text : null,
         weight: double.tryParse(_weightCtrl.text.trim()),
         transportationCharge: double.tryParse(_transChargeCtrl.text.trim()) ?? 0.0,
@@ -963,31 +967,31 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                       children: [
                         Expanded(
                           child: AppTextField(
-                            controller: _sourcePinCtrl,
-                            label: 'Source PIN',
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            onChanged: (val) => _fetchPinDetails(val, true),
-                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
                             controller: _sourceCityCtrl,
-                            label: 'Source City',
-                            readOnly: true,
-                            hint: 'Auto-fetched from PIN',
+                            label: 'Source City *',
+                            hint: 'e.g. Mumbai',
+                            validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: AppTextField(
                             controller: _sourceStateCtrl,
-                            label: 'Source State',
-                            readOnly: true,
-                            hint: 'Auto-fetched from PIN',
+                            label: 'Source State *',
+                            hint: 'e.g. Maharashtra',
+                            validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: AppTextField(
+                            controller: _sourcePinCtrl,
+                            label: 'Source PIN (Optional)',
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            onChanged: (val) => _fetchPinDetails(val, true),
+                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
                           ),
                         ),
                       ],
@@ -1003,7 +1007,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Select Source Post Office / Area (${_sourcePinOptions.length} available)',
-                          prefixIcon: Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+                          prefixIcon: const Icon(Icons.place_rounded, color: AppColors.primaryBlue),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         ),
@@ -1025,37 +1029,41 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                       const SizedBox(height: 12),
                     ],
                     const SizedBox(height: 16),
-                    AppTextField(controller: _sourceAddressCtrl, label: 'Source Full Address (Auto-resolved)'),
+                    AppTextField(
+                      controller: _sourceAddressCtrl,
+                      label: 'Source Detailed Address / Street (Optional)',
+                      hint: 'Enter building, street, or landmark if needed',
+                    ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: AppTextField(
-                            controller: _destPinCtrl,
-                            label: 'Dest. PIN',
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            onChanged: (val) => _fetchPinDetails(val, false),
-                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
                             controller: _destCityCtrl,
-                            label: 'Dest. City',
-                            readOnly: true,
-                            hint: 'Auto-fetched from PIN',
+                            label: 'Dest. City *',
+                            hint: 'e.g. Delhi',
+                            validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: AppTextField(
                             controller: _destStateCtrl,
-                            label: 'Dest. State',
-                            readOnly: true,
-                            hint: 'Auto-fetched from PIN',
+                            label: 'Dest. State *',
+                            hint: 'e.g. Delhi',
+                            validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: AppTextField(
+                            controller: _destPinCtrl,
+                            label: 'Dest. PIN (Optional)',
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            onChanged: (val) => _fetchPinDetails(val, false),
+                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
                           ),
                         ),
                       ],
@@ -1071,7 +1079,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Select Destination Post Office / Area (${_destPinOptions.length} available)',
-                          prefixIcon: Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+                          prefixIcon: const Icon(Icons.place_rounded, color: AppColors.primaryBlue),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         ),
@@ -1093,7 +1101,11 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                       const SizedBox(height: 12),
                     ],
                     const SizedBox(height: 16),
-                    AppTextField(controller: _destAddressCtrl, label: 'Dest. Full Address (Auto-resolved)'),
+                    AppTextField(
+                      controller: _destAddressCtrl,
+                      label: 'Dest. Detailed Address / Street (Optional)',
+                      hint: 'Enter building, street, or landmark if needed',
+                    ),
                     const SizedBox(height: 32),
 
                     // Section 3: Material & Charges
@@ -1296,12 +1308,16 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                       sourceCity: _sourceCityCtrl.text,
                       sourceDistrict: _sourceDistrictCtrl.text,
                       sourceState: _sourceStateCtrl.text,
-                      sourceAddress: _sourceAddressCtrl.text,
+                      sourceAddress: _sourceAddressCtrl.text.trim().isNotEmpty
+                          ? _sourceAddressCtrl.text.trim()
+                          : '${_sourceCityCtrl.text.trim()}, ${_sourceStateCtrl.text.trim()}',
                       destinationPin: _destPinCtrl.text,
                       destCity: _destCityCtrl.text,
                       destDistrict: _destDistrictCtrl.text,
                       destState: _destStateCtrl.text,
-                      destAddress: _destAddressCtrl.text,
+                      destAddress: _destAddressCtrl.text.trim().isNotEmpty
+                          ? _destAddressCtrl.text.trim()
+                          : '${_destCityCtrl.text.trim()}, ${_destStateCtrl.text.trim()}',
                       materialDescription: _materialCtrl.text.isNotEmpty ? _materialCtrl.text : null,
                       weight: double.tryParse(_weightCtrl.text.trim()),
                       transportationCharge: double.tryParse(_transChargeCtrl.text.trim()) ?? 0.0,
