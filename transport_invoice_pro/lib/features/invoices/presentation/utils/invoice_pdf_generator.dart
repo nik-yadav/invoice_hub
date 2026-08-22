@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -25,7 +26,12 @@ class InvoicePdfGenerator {
     if (firm.logoPath != null && firm.logoPath!.trim().isNotEmpty) {
       final path = firm.logoPath!.trim();
       try {
-        if (path.startsWith('data:image')) {
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          final res = await http.get(Uri.parse(path));
+          if (res.statusCode == 200) {
+            logoImage = pw.MemoryImage(res.bodyBytes);
+          }
+        } else if (path.startsWith('data:image')) {
           final base64String = path.split(',').last.replaceAll(RegExp(r'\s+'), '');
           final bytes = base64Decode(base64String);
           logoImage = pw.MemoryImage(bytes);
@@ -45,7 +51,12 @@ class InvoicePdfGenerator {
     if (firm.signaturePath != null && firm.signaturePath!.trim().isNotEmpty) {
       final path = firm.signaturePath!.trim();
       try {
-        if (path.startsWith('data:image')) {
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          final res = await http.get(Uri.parse(path));
+          if (res.statusCode == 200) {
+            signatureImage = pw.MemoryImage(res.bodyBytes);
+          }
+        } else if (path.startsWith('data:image')) {
           final base64String = path.split(',').last.replaceAll(RegExp(r'\s+'), '');
           final bytes = base64Decode(base64String);
           signatureImage = pw.MemoryImage(bytes);

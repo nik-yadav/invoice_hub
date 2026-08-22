@@ -11,6 +11,7 @@ import '../../../../core/widgets/digital_signature_dialog.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/models/firm_model.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../core/services/pin_code_service.dart';
 import '../providers/firm_provider.dart';
 
@@ -120,13 +121,15 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
       try {
         final bytes = await image.readAsBytes();
         final base64String = 'data:image/png;base64,${base64Encode(bytes)}';
-        setState(() {
-          if (isLogo) {
-            _logoPath = base64String;
-          } else {
-            _signaturePath = base64String;
+        if (isLogo) {
+          setState(() => _logoPath = base64String);
+        } else {
+          setState(() => _signaturePath = base64String);
+          final uploadedUrl = await ApiService.uploadSignature(base64String);
+          if (uploadedUrl != null && mounted) {
+            setState(() => _signaturePath = uploadedUrl);
           }
-        });
+        }
       } catch (_) {
         setState(() {
           if (isLogo) {
@@ -394,6 +397,10 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
                 );
                 if (result != null && mounted) {
                   setState(() => _signaturePath = result);
+                  final uploadedUrl = await ApiService.uploadSignature(result);
+                  if (uploadedUrl != null && mounted) {
+                    setState(() => _signaturePath = uploadedUrl);
+                  }
                 }
               },
             ),
@@ -420,7 +427,13 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
   Widget _buildImagePicker({required String title, String? path, required VoidCallback onTap}) {
     Widget? imageWidget;
     if (path != null && path.isNotEmpty) {
-      if (path.startsWith('data:image')) {
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        imageWidget = Image.network(
+          path,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
+        );
+      } else if (path.startsWith('data:image')) {
         try {
           final bytes = base64Decode(path.split(',').last);
           imageWidget = Image.memory(bytes, fit: BoxFit.contain);

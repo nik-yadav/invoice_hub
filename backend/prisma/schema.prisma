@@ -1,5 +1,3 @@
-// Prisma Schema for Transport Invoice Pro (Supabase PostgreSQL - Fully Dynamic User-Wise)
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,32 +17,31 @@ model User {
   phone       String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  profile     Profile?
-  firms       Firm[]
   customers   Customer[]
-  vehicles    Vehicle[]
+  firms       Firm[]
   invoices    Invoice[]
+  profile     Profile?
+  vehicles    Vehicle[]
 }
 
 model Profile {
-  id                String   @id @default(uuid())
-  userId            String?  @unique
-  fullName          String   @default("")
-  companyName       String   @default("")
-  email             String   @default("")
-  phone             String   @default("")
-  gstin             String   @default("")
-  address           String   @default("")
-  transportLicense  String   @default("")
-  subscriptionPlan  String   @default("Standard Plan")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  userId           String?  @unique
+  fullName         String   @default("")
+  companyName      String   @default("")
+  email            String   @default("")
+  phone            String   @default("")
+  gstin            String   @default("")
+  address          String   @default("")
+  transportLicense String   @default("")
+  subscriptionPlan String   @default("Standard Plan")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Firm {
   id            String    @id @default(uuid())
-  userId        String?
   businessName  String
   ownerName     String?
   phone         String?
@@ -60,13 +57,13 @@ model Firm {
   isDefault     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  userId        String?
   user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices      Invoice[]
 }
 
 model Customer {
   id           String    @id @default(uuid())
-  userId       String?
   customerName String
   phone        String?
   gstin        String?
@@ -76,6 +73,7 @@ model Customer {
   pin          String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  userId       String?
   user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices     Invoice[]
 }
@@ -83,7 +81,6 @@ model Customer {
 model Vehicle {
   id              String    @id @default(uuid())
   vehicleNumber   String
-  userId          String?
   type            String    @default("Open Truck")
   capacity        Float     @default(0.0)
   driverName      String?
@@ -93,13 +90,13 @@ model Vehicle {
   status          String    @default("available")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?
   invoices        Invoice[]
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {
   id                   String    @id @default(uuid())
-  userId               String?
   invoiceNumber        String    @unique
   invoiceDate          DateTime  @default(now())
   tripDate             DateTime  @default(now())
@@ -127,9 +124,9 @@ model Invoice {
   remarks              String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
-
-  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  firm     Firm?     @relation(fields: [firmId], references: [id], onDelete: SetNull)
-  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  userId               String?
+  customer             Customer? @relation(fields: [customerId], references: [id])
+  firm                 Firm?     @relation(fields: [firmId], references: [id])
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle              Vehicle?  @relation(fields: [vehicleId], references: [id])
 }

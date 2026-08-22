@@ -111,6 +111,21 @@ class ApiService {
       throw ApiException(message.toString(), response.statusCode);
     }
   }
+
+  /// Upload signature image to backend / Supabase S3 storage bucket.
+  static Future<String?> uploadSignature(String base64Image) async {
+    try {
+      final response = await post('/upload/signature', {
+        'image': base64Image,
+      });
+      if (response['success'] == true && response['data'] != null) {
+        return response['data']['url'] as String?;
+      }
+    } catch (e) {
+      if (kDebugMode) print('[ApiService Signature Upload Error]: $e');
+    }
+    return null;
+  }
 }
 
 /// Custom Exception thrown by ApiService.

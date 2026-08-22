@@ -14,6 +14,7 @@ const customerRoutes = require('./src/routes/customerRoutes');
 const vehicleRoutes = require('./src/routes/vehicleRoutes');
 const invoiceRoutes = require('./src/routes/invoiceRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
+const uploadRoutes = require('./src/routes/uploadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +23,9 @@ const HOST = process.env.HOST || '127.0.0.1';
 // Enable CORS
 app.use(cors());
 
-// Body Parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body Parsers (Increased limit to 10mb for image/signature uploads)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // HTTP Request Logger
 if (process.env.NODE_ENV !== 'production') {
@@ -56,6 +57,7 @@ app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // 404 Route Handler
 app.use('*', (req, res) => {
