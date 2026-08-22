@@ -34,11 +34,13 @@ class RecentInvoiceItem {
 /// Recent Invoices data table/list card.
 class RecentInvoicesCard extends StatelessWidget {
   final List<RecentInvoiceItem> invoices;
+  final bool isLoading;
   final VoidCallback? onViewAll;
 
   const RecentInvoicesCard({
     super.key,
     required this.invoices,
+    this.isLoading = false,
     this.onViewAll,
   });
 
@@ -73,7 +75,18 @@ class RecentInvoicesCard extends StatelessWidget {
             ],
           ),
           const Divider(height: UIConstants.spacing20),
-          if (invoices.isEmpty)
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.all(UIConstants.spacing24),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            )
+          else if (invoices.isEmpty)
             Padding(
               padding: const EdgeInsets.all(UIConstants.spacing24),
               child: Center(

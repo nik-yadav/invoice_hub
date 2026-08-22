@@ -205,6 +205,7 @@ class DashboardOverviewTab extends ConsumerWidget {
             // Recent Invoices Section
             RecentInvoicesCard(
               invoices: recentInvoices,
+              isLoading: invoicesAsync.isLoading,
               onViewAll: () => context.goNamed(RouteNames.invoices),
             ),
           ],

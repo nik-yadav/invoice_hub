@@ -38,6 +38,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
     required String gstin,
     required String address,
     required String transportLicense,
+    bool? enablePostOfficeSelection,
   }) async {
     final updated = state.copyWith(
       fullName: fullName,
@@ -47,7 +48,19 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       gstin: gstin,
       address: address,
       transportLicense: transportLicense,
+      enablePostOfficeSelection: enablePostOfficeSelection ?? state.enablePostOfficeSelection,
     );
+    state = updated;
+    await _localDataSource.saveProfile(updated);
+
+    try {
+      await ApiService.put('/profile', updated.toJson());
+    } catch (_) {}
+  }
+
+  /// Toggle post office selection preference.
+  Future<void> togglePostOfficeSelection(bool enabled) async {
+    final updated = state.copyWith(enablePostOfficeSelection: enabled);
     state = updated;
     await _localDataSource.saveProfile(updated);
 

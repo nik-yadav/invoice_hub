@@ -87,22 +87,28 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
   bool _isLoadingDestPin = false;
 
   void _onSelectSourceLocation(PinCodeDetails details) {
+    final enablePostOffice = ref.read(profileControllerProvider).enablePostOfficeSelection;
     setState(() {
       _selectedSourcePinOption = details;
       _sourceCityCtrl.text = details.city;
       _sourceDistrictCtrl.text = details.district;
       _sourceStateCtrl.text = details.state;
-      _sourceAddressCtrl.text = details.address;
+      if (enablePostOffice) {
+        _sourceAddressCtrl.text = details.address;
+      }
     });
   }
 
   void _onSelectDestLocation(PinCodeDetails details) {
+    final enablePostOffice = ref.read(profileControllerProvider).enablePostOfficeSelection;
     setState(() {
       _selectedDestPinOption = details;
       _destCityCtrl.text = details.city;
       _destDistrictCtrl.text = details.district;
       _destStateCtrl.text = details.state;
-      _destAddressCtrl.text = details.address;
+      if (enablePostOffice) {
+        _destAddressCtrl.text = details.address;
+      }
     });
   }
 
@@ -967,6 +973,18 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                       children: [
                         Expanded(
                           child: AppTextField(
+                            controller: _sourcePinCtrl,
+                            label: 'Source PIN (Optional)',
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            onChanged: (val) => _fetchPinDetails(val, true),
+                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: AppTextField(
                             controller: _sourceCityCtrl,
                             label: 'Source City *',
                             hint: 'e.g. Mumbai',
@@ -982,25 +1000,13 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                             validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _sourcePinCtrl,
-                            label: 'Source PIN (Optional)',
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            onChanged: (val) => _fetchPinDetails(val, true),
-                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
-                          ),
-                        ),
                       ],
                     ),
                     if (_isLoadingSourcePin) ...[
                       const SizedBox(height: 8),
                       const LinearProgressIndicator(),
                       const SizedBox(height: 8),
-                    ] else if (_sourcePinOptions.isNotEmpty) ...[
+                    ] else if (profile.enablePostOfficeSelection && _sourcePinOptions.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       DropdownButtonFormField<PinCodeDetails>(
                         value: _selectedSourcePinOption,
@@ -1039,6 +1045,18 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                       children: [
                         Expanded(
                           child: AppTextField(
+                            controller: _destPinCtrl,
+                            label: 'Dest. PIN (Optional)',
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            onChanged: (val) => _fetchPinDetails(val, false),
+                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: AppTextField(
                             controller: _destCityCtrl,
                             label: 'Dest. City *',
                             hint: 'e.g. Delhi',
@@ -1054,25 +1072,13 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
                             validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _destPinCtrl,
-                            label: 'Dest. PIN (Optional)',
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            onChanged: (val) => _fetchPinDetails(val, false),
-                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
-                          ),
-                        ),
                       ],
                     ),
                     if (_isLoadingDestPin) ...[
                       const SizedBox(height: 8),
                       const LinearProgressIndicator(),
                       const SizedBox(height: 8),
-                    ] else if (_destPinOptions.isNotEmpty) ...[
+                    ] else if (profile.enablePostOfficeSelection && _destPinOptions.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       DropdownButtonFormField<PinCodeDetails>(
                         value: _selectedDestPinOption,

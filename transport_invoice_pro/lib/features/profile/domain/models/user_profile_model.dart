@@ -10,6 +10,7 @@ class UserProfileModel {
   final String address;
   final String transportLicense;
   final String subscriptionPlan;
+  final bool enablePostOfficeSelection;
 
   const UserProfileModel({
     required this.fullName,
@@ -20,6 +21,7 @@ class UserProfileModel {
     required this.address,
     required this.transportLicense,
     this.subscriptionPlan = 'Standard Plan',
+    this.enablePostOfficeSelection = false,
   });
 
   /// Dynamic initial profile data derived from current user session.
@@ -34,6 +36,7 @@ class UserProfileModel {
       address: '',
       transportLicense: '',
       subscriptionPlan: 'Standard Plan',
+      enablePostOfficeSelection: false,
     );
   }
 
@@ -47,6 +50,7 @@ class UserProfileModel {
       address: json['address'] as String? ?? '',
       transportLicense: json['transport_license'] as String? ?? '',
       subscriptionPlan: json['subscription_plan'] as String? ?? 'Standard Plan',
+      enablePostOfficeSelection: json['enable_post_office_selection'] as bool? ?? false,
     );
   }
 
@@ -60,6 +64,7 @@ class UserProfileModel {
       'address': address,
       'transport_license': transportLicense,
       'subscription_plan': subscriptionPlan,
+      'enable_post_office_selection': enablePostOfficeSelection,
     };
   }
 
@@ -72,6 +77,7 @@ class UserProfileModel {
     String? address,
     String? transportLicense,
     String? subscriptionPlan,
+    bool? enablePostOfficeSelection,
   }) {
     return UserProfileModel(
       fullName: fullName ?? this.fullName,
@@ -82,6 +88,7 @@ class UserProfileModel {
       address: address ?? this.address,
       transportLicense: transportLicense ?? this.transportLicense,
       subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
+      enablePostOfficeSelection: enablePostOfficeSelection ?? this.enablePostOfficeSelection,
     );
   }
 }

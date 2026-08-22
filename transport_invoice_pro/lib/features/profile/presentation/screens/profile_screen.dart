@@ -526,6 +526,41 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: UIConstants.spacing24),
 
+                // Location & Address Settings Card
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Location & Address Settings',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const Divider(height: UIConstants.spacing24),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        secondary: Container(
+                          padding: const EdgeInsets.all(UIConstants.spacing8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.08),
+                            borderRadius: UIConstants.borderRadiusCircular,
+                          ),
+                          child: Icon(Icons.markunread_mailbox_outlined, color: theme.colorScheme.primary, size: 20),
+                        ),
+                        title: const Text('Select Post Office for PIN Codes', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        subtitle: const Text(
+                          'When enabled, entering a 6-digit PIN code allows selecting a specific post office/area. When disabled, only City and State are used in detailed address.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        value: profile.enablePostOfficeSelection,
+                        onChanged: (val) {
+                          ref.read(profileControllerProvider.notifier).togglePostOfficeSelection(val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: UIConstants.spacing24),
+
                 // 4. System & App Info Card
                 AppCard(
                   child: Column(
