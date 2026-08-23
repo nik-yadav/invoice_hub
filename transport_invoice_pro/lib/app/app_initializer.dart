@@ -10,7 +10,7 @@ class AppInitializer {
   AppInitializer._();
 
   /// Executes all required asynchronous initializations in order.
-  static Future<void> init({AppEnvironment environment = AppEnvironment.dev}) async {
+  static Future<void> init({AppEnvironment? environment}) async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // 1. Initialize Environment Configuration

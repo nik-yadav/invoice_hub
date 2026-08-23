@@ -10,7 +10,7 @@ import 'app/app_initializer.dart';
 void main() {
   runZonedGuarded<Future<void>>(() async {
     // Bootstrap async application services
-    await AppInitializer.init(environment: AppEnvironment.dev);
+    await AppInitializer.init();
 
     // Global error listener for Flutter framework UI errors
     FlutterError.onError = (FlutterErrorDetails details) {
