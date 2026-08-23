@@ -695,672 +695,751 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.invoice == null ? 'Create Invoice' : 'Edit Invoice'),
-      ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Form Content
-          Expanded(
-            flex: 2,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 900;
+
+    final firmField = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Select Firm',
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        DropdownButtonFormField<String>(
+          value: _selectedFirmId,
+          isExpanded: true,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+          items: availableFirms.map((f) => DropdownMenuItem(
+            value: f.id,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    f.businessName,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (f.signaturePath != null && f.signaturePath!.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.draw_rounded, size: 16, color: Colors.green.shade700),
+                ],
+                if (f.isDefault) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'DEFAULT',
+                      style: TextStyle(fontSize: 9, color: Colors.green.shade800, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          )).toList(),
+          onChanged: (val) {
+            setState(() => _selectedFirmId = val);
+          },
+          validator: (val) => val == null ? 'Required' : null,
+        ),
+      ],
+    );
+
+    final customerField = LayoutBuilder(
+      builder: (context, constraints) => Autocomplete<CustomerModel>(
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          final typed = textEditingValue.text.trim();
+          if (typed.isEmpty) return const Iterable<CustomerModel>.empty();
+          final matches = customers.where((c) => c.customerName.toLowerCase().contains(typed.toLowerCase())).toList();
+          if (matches.isEmpty) {
+            return [CustomerModel(id: 'CREATE_NEW', customerName: 'CREATE_NEW', phone: '', gstin: '', address: '', city: '', state: '', pin: '')];
+          }
+          return matches;
+        },
+        displayStringForOption: (option) => option.id == 'CREATE_NEW' ? _customerSearchCtrl.text : option.customerName,
+        fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+          if (_customerSearchCtrl.text.isNotEmpty && textController.text != _customerSearchCtrl.text) {
+            textController.text = _customerSearchCtrl.text;
+          }
+          return AppTextField(
+            controller: textController,
+            focusNode: focusNode,
+            label: 'Customer Name',
+            prefixIcon: const Icon(Icons.person),
+            onChanged: (val) {
+              _customerSearchCtrl.text = val;
+            },
+            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+          );
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          final typedName = _customerSearchCtrl.text.trim();
+          final hasMatch = options.any((c) => c.id != 'CREATE_NEW' && c.customerName.toLowerCase() == typedName.toLowerCase());
+          final validOptions = options.where((c) => c.id != 'CREATE_NEW');
+          
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth, maxHeight: 200),
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
                   children: [
-                    // Section 1: Entities
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Parties & Vehicle', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                        IconButton.filledTonal(
-                          onPressed: () => _addCustomField(true),
-                          icon: const Icon(Icons.add),
-                          tooltip: 'Add Custom Field',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Searchable Multi-Firm Dropdown
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Select Firm',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 6.0),
-                              DropdownButtonFormField<String>(
-                                value: _selectedFirmId,
-                                isExpanded: true,
-                                decoration: const InputDecoration(border: OutlineInputBorder()),
-                                items: availableFirms.map((f) => DropdownMenuItem(
-                                  value: f.id,
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          f.businessName,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      if (f.signaturePath != null && f.signaturePath!.isNotEmpty) ...[
-                                        const SizedBox(width: 6),
-                                        Icon(Icons.draw_rounded, size: 16, color: Colors.green.shade700),
-                                      ],
-                                      if (f.isDefault) ...[
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.shade100,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            'DEFAULT',
-                                            style: TextStyle(fontSize: 9, color: Colors.green.shade800, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                )).toList(),
-                                onChanged: (val) {
-                                  setState(() => _selectedFirmId = val);
-                                },
-                                validator: (val) => val == null ? 'Required' : null,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        
-                        // Searchable & Auto-creating Customer Input
-                        Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) => Autocomplete<CustomerModel>(
-                              optionsBuilder: (TextEditingValue textEditingValue) {
-                                final typed = textEditingValue.text.trim();
-                                if (typed.isEmpty) return const Iterable<CustomerModel>.empty();
-                                final matches = customers.where((c) => c.customerName.toLowerCase().contains(typed.toLowerCase())).toList();
-                                if (matches.isEmpty) {
-                                  return [CustomerModel(id: 'CREATE_NEW', customerName: 'CREATE_NEW', phone: '', gstin: '', address: '', city: '', state: '', pin: '')];
-                                }
-                                return matches;
-                              },
-                              displayStringForOption: (option) => option.id == 'CREATE_NEW' ? _customerSearchCtrl.text : option.customerName,
-                              fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
-                                if (_customerSearchCtrl.text.isNotEmpty && textController.text != _customerSearchCtrl.text) {
-                                  textController.text = _customerSearchCtrl.text;
-                                }
-                                return AppTextField(
-                                  controller: textController,
-                                  focusNode: focusNode,
-                                  label: 'Customer Name',
-                                  prefixIcon: const Icon(Icons.person),
-                                  onChanged: (val) {
-                                    _customerSearchCtrl.text = val;
-                                  },
-                                  validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                                );
-                              },
-                              optionsViewBuilder: (context, onSelected, options) {
-                                final typedName = _customerSearchCtrl.text.trim();
-                                final hasMatch = options.any((c) => c.id != 'CREATE_NEW' && c.customerName.toLowerCase() == typedName.toLowerCase());
-                                final validOptions = options.where((c) => c.id != 'CREATE_NEW');
-                                
-                                return Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Material(
-                                    elevation: 4,
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(maxWidth: constraints.maxWidth, maxHeight: 200),
-                                      child: ListView(
-                                        padding: EdgeInsets.zero,
-                                        shrinkWrap: true,
-                                        children: [
-                                          ...validOptions.map((customer) => ListTile(
-                                            title: Text(customer.customerName),
-                                            onTap: () {
-                                              onSelected(customer);
-                                              setState(() {
-                                                _selectedCustomerId = customer.id;
-                                                _customerSearchCtrl.text = customer.customerName;
-                                              });
-                                            },
-                                          )),
-                                          if (typedName.isNotEmpty && !hasMatch)
-                                            ListTile(
-                                              tileColor: AppColors.primaryBlue.withOpacity(0.05),
-                                              title: Text('Create Customer "$typedName"', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                                              leading: const Icon(Icons.add, color: AppColors.primaryBlue),
-                                              onTap: () {
-                                                _handleAutoCreateCustomer(typedName);
-                                                FocusScope.of(context).unfocus();
-                                              },
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        
-                        // Searchable & Auto-creating Vehicle Input
-                        Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) => Autocomplete<VehicleModel>(
-                              optionsBuilder: (TextEditingValue textEditingValue) {
-                                final typed = textEditingValue.text.trim();
-                                if (typed.isEmpty) return const Iterable<VehicleModel>.empty();
-                                final matches = vehicles.where((v) => v.vehicleNumber.toLowerCase().contains(typed.toLowerCase())).toList();
-                                if (matches.isEmpty) {
-                                  return [VehicleModel(id: 'CREATE_NEW', vehicleNumber: 'CREATE_NEW', type: '', capacity: 0, driverName: '', driverPhone: '', insuranceNumber: '', status: VehicleStatus.available)];
-                                }
-                                return matches;
-                              },
-                              displayStringForOption: (option) => option.id == 'CREATE_NEW' ? _vehicleSearchCtrl.text : option.vehicleNumber,
-                              fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
-                                if (_vehicleSearchCtrl.text.isNotEmpty && textController.text != _vehicleSearchCtrl.text) {
-                                  textController.text = _vehicleSearchCtrl.text;
-                                }
-                                return AppTextField(
-                                  controller: textController,
-                                  focusNode: focusNode,
-                                  label: 'Vehicle Number',
-                                  prefixIcon: const Icon(Icons.local_shipping),
-                                  onChanged: (val) {
-                                    _vehicleSearchCtrl.text = val;
-                                  },
-                                  validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                                );
-                              },
-                              optionsViewBuilder: (context, onSelected, options) {
-                                final typedNum = _vehicleSearchCtrl.text.trim();
-                                final hasMatch = options.any((v) => v.id != 'CREATE_NEW' && v.vehicleNumber.toLowerCase() == typedNum.toLowerCase());
-                                final validOptions = options.where((v) => v.id != 'CREATE_NEW');
-
-                                return Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Material(
-                                    elevation: 4,
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(maxWidth: constraints.maxWidth, maxHeight: 200),
-                                      child: ListView(
-                                        padding: EdgeInsets.zero,
-                                        shrinkWrap: true,
-                                        children: [
-                                          ...validOptions.map((vehicle) => ListTile(
-                                            title: Text(vehicle.vehicleNumber),
-                                            onTap: () {
-                                              onSelected(vehicle);
-                                              setState(() {
-                                                _selectedVehicleId = vehicle.id;
-                                                _vehicleSearchCtrl.text = vehicle.vehicleNumber;
-                                              });
-                                            },
-                                          )),
-                                          if (typedNum.isNotEmpty && !hasMatch)
-                                            ListTile(
-                                              tileColor: AppColors.primaryBlue.withOpacity(0.05),
-                                              title: Text('Create Vehicle "$typedNum"', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                                              leading: const Icon(Icons.add, color: AppColors.primaryBlue),
-                                              onTap: () {
-                                                _handleAutoCreateVehicle(typedNum);
-                                                FocusScope.of(context).unfocus();
-                                              },
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    // Dynamic Custom Parties & Vehicle Level Fields
-                    if (_customPartiesFields.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        children: _customPartiesFields.keys.map((key) {
-                          return SizedBox(
-                            width: 250,
-                            child: AppTextField(
-                              controller: _customPartiesCtrls[key],
-                              label: key,
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
-                                onPressed: () {
-                                  setState(() {
-                                    _customPartiesFields.remove(key);
-                                    _customPartiesCtrls.remove(key);
-                                  });
-                                },
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                    const SizedBox(height: 32),
-                    
-                    // Section 2: Trip & Location
-                    Text('Trip Details', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AppTextField(
-                            controller: _sourcePinCtrl,
-                            label: 'Source PIN (Optional)',
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            onChanged: (val) => _fetchPinDetails(val, true),
-                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _sourceCityCtrl,
-                            label: 'Source City *',
-                            hint: 'e.g. Mumbai',
-                            validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _sourceStateCtrl,
-                            label: 'Source State *',
-                            hint: 'e.g. Maharashtra',
-                            validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_isLoadingSourcePin) ...[
-                      const SizedBox(height: 8),
-                      const LinearProgressIndicator(),
-                      const SizedBox(height: 8),
-                    ] else if (profile.enablePostOfficeSelection && _sourcePinOptions.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<PinCodeDetails>(
-                        value: _selectedSourcePinOption,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Select Source Post Office / Area (${_sourcePinOptions.length} available)',
-                          prefixIcon: const Icon(Icons.place_rounded, color: AppColors.primaryBlue),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                        items: _sourcePinOptions.map((opt) {
-                          return DropdownMenuItem<PinCodeDetails>(
-                            value: opt,
-                            child: Text(
-                              '${opt.name} (${opt.city}, ${opt.state})',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (selected) {
-                          if (selected != null) {
-                            _onSelectSourceLocation(selected);
-                          }
+                    ...validOptions.map((customer) => ListTile(
+                      title: Text(customer.customerName),
+                      onTap: () {
+                        onSelected(customer);
+                        setState(() {
+                          _selectedCustomerId = customer.id;
+                          _customerSearchCtrl.text = customer.customerName;
+                        });
+                      },
+                    )),
+                    if (typedName.isNotEmpty && !hasMatch)
+                      ListTile(
+                        tileColor: AppColors.primaryBlue.withOpacity(0.05),
+                        title: Text('Create Customer "$typedName"', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                        leading: const Icon(Icons.add, color: AppColors.primaryBlue),
+                        onTap: () {
+                          _handleAutoCreateCustomer(typedName);
+                          FocusScope.of(context).unfocus();
                         },
                       ),
-                      const SizedBox(height: 12),
-                    ],
-                    const SizedBox(height: 16),
-                    AppTextField(
-                      controller: _sourceAddressCtrl,
-                      label: 'Source Detailed Address / Street (Optional)',
-                      hint: 'Enter building, street, or landmark if needed',
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AppTextField(
-                            controller: _destPinCtrl,
-                            label: 'Dest. PIN (Optional)',
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            onChanged: (val) => _fetchPinDetails(val, false),
-                            validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _destCityCtrl,
-                            label: 'Dest. City *',
-                            hint: 'e.g. Delhi',
-                            validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _destStateCtrl,
-                            label: 'Dest. State *',
-                            hint: 'e.g. Delhi',
-                            validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_isLoadingDestPin) ...[
-                      const SizedBox(height: 8),
-                      const LinearProgressIndicator(),
-                      const SizedBox(height: 8),
-                    ] else if (profile.enablePostOfficeSelection && _destPinOptions.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<PinCodeDetails>(
-                        value: _selectedDestPinOption,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Select Destination Post Office / Area (${_destPinOptions.length} available)',
-                          prefixIcon: const Icon(Icons.place_rounded, color: AppColors.primaryBlue),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                        items: _destPinOptions.map((opt) {
-                          return DropdownMenuItem<PinCodeDetails>(
-                            value: opt,
-                            child: Text(
-                              '${opt.name} (${opt.city}, ${opt.state})',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (selected) {
-                          if (selected != null) {
-                            _onSelectDestLocation(selected);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    const SizedBox(height: 16),
-                    AppTextField(
-                      controller: _destAddressCtrl,
-                      label: 'Dest. Detailed Address / Street (Optional)',
-                      hint: 'Enter building, street, or landmark if needed',
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Section 3: Material & Charges
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Cargo & Charges', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                        IconButton.filledTonal(
-                          onPressed: () => _addCustomField(false),
-                          icon: const Icon(Icons.add),
-                          tooltip: 'Add Custom Charge',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: AppTextField(controller: _materialCtrl, label: 'Material Description (Optional)')),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppTextField(
-                            controller: _weightCtrl,
-                            label: 'Weight (Tons) (Optional)',
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            validator: (val) {
-                              final selectedVehicle = vehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
-                              return Validators.validateWeightAgainstCapacity(val, selectedVehicle?.capacity);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        SizedBox(
-                          width: 250,
-                          child: AppTextField(
-                            controller: _transChargeCtrl,
-                            label: 'Transportation Charge',
-                            keyboardType: TextInputType.number,
-                            validator: (val) {
-                              if (val == null || val.isEmpty) return 'Required';
-                              if (double.tryParse(val) == null) return 'Must be a number';
-                              return null;
-                            },
-                          ),
-                        ),
-                        
-                        // Render Dynamic Custom Charges Fields
-                        ..._customChargesFields.keys.map((key) {
-                          return SizedBox(
-                            width: 250,
-                            child: AppTextField(
-                              controller: _customChargesCtrls[key],
-                              label: key,
-                              keyboardType: TextInputType.number,
-                              validator: (val) => val != null && val.isNotEmpty && double.tryParse(val) == null ? 'Must be a number' : null,
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
-                                onPressed: () {
-                                  setState(() {
-                                    _customChargesFields.remove(key);
-                                    _customChargesCtrls.remove(key);
-                                    _calculateTotal();
-                                  });
-                                },
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // Section 4: Payment
-                    Text('Payment & Remarks', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<PaymentMethod>(
-                            value: _paymentMethod,
-                            decoration: const InputDecoration(labelText: 'Payment Method', border: OutlineInputBorder()),
-                            items: PaymentMethod.values.map((e) => DropdownMenuItem(value: e, child: Text(e.displayName))).toList(),
-                            onChanged: (val) => setState(() => _paymentMethod = val!),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButtonFormField<PaymentStatus>(
-                            value: _paymentStatus,
-                            decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
-                            items: PaymentStatus.values.map((e) => DropdownMenuItem(value: e, child: Text(e.displayName))).toList(),
-                            onChanged: (val) => setState(() => _paymentStatus = val!),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    AppTextField(controller: _remarksCtrl, label: 'Remarks', maxLines: 3),
-                    const SizedBox(height: 80), // padding for scroll
                   ],
                 ),
               ),
             ),
-          ),
-          
-          // Live Total Card
-          Container(
-            width: 350,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              border: Border(left: BorderSide(color: Colors.grey.withOpacity(0.2))),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AppTextField(
-                  controller: _invoiceNumberCtrl,
-                  label: 'Invoice Number',
-                  readOnly: true,
-                  validator: (val) => val!.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final now = DateTime.now();
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _invoiceDate.isAfter(now) ? now : _invoiceDate,
-                      firstDate: DateTime(2000),
-                      lastDate: now,
-                    );
-                    if (date != null) setState(() => _invoiceDate = date);
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Invoice Date', border: OutlineInputBorder()),
-                    child: Text(DateFormat('dd MMM yyyy').format(_invoiceDate)),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                AppCard(
-                  color: AppColors.primaryBlue,
-                  child: Column(
-                    children: [
-                      const Text('Total Amount', style: TextStyle(color: Colors.white70, fontSize: 16)),
-                      const SizedBox(height: 8),
-                      Text(
-                        Formatters.formatCurrency(_totalAmount),
-                        style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    if (!(_formKey.currentState?.validate() ?? false)) return;
+          );
+        },
+      ),
+    );
 
-                    // Guarantee auto-created customer and vehicle are written to Hive first
-                    await _ensureEntitiesSaved();
+    final vehicleField = LayoutBuilder(
+      builder: (context, constraints) => Autocomplete<VehicleModel>(
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          final typed = textEditingValue.text.trim();
+          if (typed.isEmpty) return const Iterable<VehicleModel>.empty();
+          final matches = vehicles.where((v) => v.vehicleNumber.toLowerCase().contains(typed.toLowerCase())).toList();
+          if (matches.isEmpty) {
+            return [VehicleModel(id: 'CREATE_NEW', vehicleNumber: 'CREATE_NEW', type: '', capacity: 0, driverName: '', driverPhone: '', insuranceNumber: '', status: VehicleStatus.available)];
+          }
+          return matches;
+        },
+        displayStringForOption: (option) => option.id == 'CREATE_NEW' ? _vehicleSearchCtrl.text : option.vehicleNumber,
+        fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+          if (_vehicleSearchCtrl.text.isNotEmpty && textController.text != _vehicleSearchCtrl.text) {
+            textController.text = _vehicleSearchCtrl.text;
+          }
+          return AppTextField(
+            controller: textController,
+            focusNode: focusNode,
+            label: 'Vehicle Number',
+            prefixIcon: const Icon(Icons.local_shipping),
+            onChanged: (val) {
+              _vehicleSearchCtrl.text = val;
+            },
+            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+          );
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          final typedNum = _vehicleSearchCtrl.text.trim();
+          final hasMatch = options.any((v) => v.id != 'CREATE_NEW' && v.vehicleNumber.toLowerCase() == typedNum.toLowerCase());
+          final validOptions = options.where((v) => v.id != 'CREATE_NEW');
 
-                    final customer = customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
-                    final vehicle = vehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
-
-                    if (customer == null || vehicle == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please select or create Customer and Vehicle before previewing'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                      return;
-                    }
-
-                    // Gather dynamic custom inputs
-                    final partiesMap = <String, String>{};
-                    _customPartiesCtrls.forEach((k, ctrl) {
-                      partiesMap[k] = ctrl.text.trim();
-                    });
-
-                    final chargesMap = <String, double>{};
-                    _customChargesCtrls.forEach((k, ctrl) {
-                      chargesMap[k] = double.tryParse(ctrl.text.trim()) ?? 0.0;
-                    });
-
-                    final invoice = InvoiceModel(
-                      id: widget.invoice?.id ?? const Uuid().v4(),
-                      invoiceNumber: _invoiceNumberCtrl.text,
-                      invoiceDate: _invoiceDate,
-                      tripDate: _tripDate,
-                      firmId: _selectedFirmId!,
-                      customerId: _selectedCustomerId!,
-                      vehicleId: _selectedVehicleId!,
-                      sourcePin: _sourcePinCtrl.text,
-                      sourceCity: _sourceCityCtrl.text,
-                      sourceDistrict: _sourceDistrictCtrl.text,
-                      sourceState: _sourceStateCtrl.text,
-                      sourceAddress: _sourceAddressCtrl.text.trim().isNotEmpty
-                          ? _sourceAddressCtrl.text.trim()
-                          : '${_sourceCityCtrl.text.trim()}, ${_sourceStateCtrl.text.trim()}',
-                      destinationPin: _destPinCtrl.text,
-                      destCity: _destCityCtrl.text,
-                      destDistrict: _destDistrictCtrl.text,
-                      destState: _destStateCtrl.text,
-                      destAddress: _destAddressCtrl.text.trim().isNotEmpty
-                          ? _destAddressCtrl.text.trim()
-                          : '${_destCityCtrl.text.trim()}, ${_destStateCtrl.text.trim()}',
-                      materialDescription: _materialCtrl.text.isNotEmpty ? _materialCtrl.text : null,
-                      weight: double.tryParse(_weightCtrl.text.trim()),
-                      transportationCharge: double.tryParse(_transChargeCtrl.text.trim()) ?? 0.0,
-                      customPartiesFields: partiesMap,
-                      customChargesFields: chargesMap,
-                      totalAmount: _totalAmount,
-                      paymentMethod: _paymentMethod,
-                      paymentStatus: _paymentStatus,
-                      remarks: _remarksCtrl.text,
-                    );
-
-                    context.pushNamed(
-                      RouteNames.previewInvoice,
-                      extra: {
-                        'invoice': invoice,
-                        'firm': availableFirms.firstWhere((f) => f.id == _selectedFirmId, orElse: () => fallbackFirm),
-                        'customer': customer,
-                        'vehicle': vehicle,
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth, maxHeight: 200),
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  children: [
+                    ...validOptions.map((vehicle) => ListTile(
+                      title: Text(vehicle.vehicleNumber),
+                      onTap: () {
+                        onSelected(vehicle);
+                        setState(() {
+                          _selectedVehicleId = vehicle.id;
+                          _vehicleSearchCtrl.text = vehicle.vehicleNumber;
+                        });
                       },
-                    );
-                  },
-                  icon: const Icon(Icons.remove_red_eye),
-                  label: const Text('Preview Invoice'),
-                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
+                    )),
+                    if (typedNum.isNotEmpty && !hasMatch)
+                      ListTile(
+                        tileColor: AppColors.primaryBlue.withOpacity(0.05),
+                        title: Text('Create Vehicle "$typedNum"', style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                        leading: const Icon(Icons.add, color: AppColors.primaryBlue),
+                        onTap: () {
+                          _handleAutoCreateVehicle(typedNum);
+                          FocusScope.of(context).unfocus();
+                        },
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                AppButton(
-                  text: 'Save Invoice',
-                  isLoading: _isLoading,
-                  onPressed: _saveInvoice,
-                  width: double.infinity,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    final sourcePinField = AppTextField(
+      controller: _sourcePinCtrl,
+      label: 'Source PIN (Optional)',
+      keyboardType: TextInputType.number,
+      maxLength: 6,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      onChanged: (val) => _fetchPinDetails(val, true),
+      validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
+    );
+
+    final sourceCityField = AppTextField(
+      controller: _sourceCityCtrl,
+      label: 'Source City *',
+      hint: 'e.g. Mumbai',
+      validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
+    );
+
+    final sourceStateField = AppTextField(
+      controller: _sourceStateCtrl,
+      label: 'Source State *',
+      hint: 'e.g. Maharashtra',
+      validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
+    );
+
+    final destPinField = AppTextField(
+      controller: _destPinCtrl,
+      label: 'Dest. PIN (Optional)',
+      keyboardType: TextInputType.number,
+      maxLength: 6,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      onChanged: (val) => _fetchPinDetails(val, false),
+      validator: (val) => val != null && val.isNotEmpty && val.length != 6 ? 'PIN must be 6 digits' : null,
+    );
+
+    final destCityField = AppTextField(
+      controller: _destCityCtrl,
+      label: 'Dest. City *',
+      hint: 'e.g. Delhi',
+      validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
+    );
+
+    final destStateField = AppTextField(
+      controller: _destStateCtrl,
+      label: 'Dest. State *',
+      hint: 'e.g. Delhi',
+      validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
+    );
+
+    final materialField = AppTextField(
+      controller: _materialCtrl,
+      label: 'Material Description (Optional)',
+    );
+
+    final weightField = AppTextField(
+      controller: _weightCtrl,
+      label: 'Weight (Tons) (Optional)',
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      validator: (val) {
+        final selectedVehicle = vehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
+        return Validators.validateWeightAgainstCapacity(val, selectedVehicle?.capacity);
+      },
+    );
+
+    final paymentMethodField = DropdownButtonFormField<PaymentMethod>(
+      value: _paymentMethod,
+      decoration: const InputDecoration(labelText: 'Payment Method', border: OutlineInputBorder()),
+      items: PaymentMethod.values.map((e) => DropdownMenuItem(value: e, child: Text(e.displayName))).toList(),
+      onChanged: (val) => setState(() => _paymentMethod = val!),
+    );
+
+    final paymentStatusField = DropdownButtonFormField<PaymentStatus>(
+      value: _paymentStatus,
+      decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
+      items: PaymentStatus.values.map((e) => DropdownMenuItem(value: e, child: Text(e.displayName))).toList(),
+      onChanged: (val) => setState(() => _paymentStatus = val!),
+    );
+
+    final liveTotalCard = Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: isMobile ? BorderRadius.circular(16) : null,
+        border: isMobile
+            ? Border.all(color: Colors.grey.withOpacity(0.2))
+            : Border(left: BorderSide(color: Colors.grey.withOpacity(0.2))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppTextField(
+            controller: _invoiceNumberCtrl,
+            label: 'Invoice Number',
+            readOnly: true,
+            validator: (val) => val!.isEmpty ? 'Required' : null,
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () async {
+              final now = DateTime.now();
+              final date = await showDatePicker(
+                context: context,
+                initialDate: _invoiceDate.isAfter(now) ? now : _invoiceDate,
+                firstDate: DateTime(2000),
+                lastDate: now,
+              );
+              if (date != null) setState(() => _invoiceDate = date);
+            },
+            child: InputDecorator(
+              decoration: const InputDecoration(labelText: 'Invoice Date', border: OutlineInputBorder()),
+              child: Text(DateFormat('dd MMM yyyy').format(_invoiceDate)),
+            ),
+          ),
+          const SizedBox(height: 32),
+          AppCard(
+            color: AppColors.primaryBlue,
+            child: Column(
+              children: [
+                const Text('Total Amount', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                const SizedBox(height: 8),
+                Text(
+                  Formatters.formatCurrency(_totalAmount),
+                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
+          if (!isMobile) const Spacer() else const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: () async {
+              if (!(_formKey.currentState?.validate() ?? false)) return;
+
+              // Guarantee auto-created customer and vehicle are written to Hive first
+              await _ensureEntitiesSaved();
+
+              final customer = customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
+              final vehicle = vehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
+
+              if (customer == null || vehicle == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select or create Customer and Vehicle before previewing'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+                return;
+              }
+
+              // Gather dynamic custom inputs
+              final partiesMap = <String, String>{};
+              _customPartiesCtrls.forEach((k, ctrl) {
+                partiesMap[k] = ctrl.text.trim();
+              });
+
+              final chargesMap = <String, double>{};
+              _customChargesCtrls.forEach((k, ctrl) {
+                chargesMap[k] = double.tryParse(ctrl.text.trim()) ?? 0.0;
+              });
+
+              final invoice = InvoiceModel(
+                id: widget.invoice?.id ?? const Uuid().v4(),
+                invoiceNumber: _invoiceNumberCtrl.text,
+                invoiceDate: _invoiceDate,
+                tripDate: _tripDate,
+                firmId: _selectedFirmId!,
+                customerId: _selectedCustomerId!,
+                vehicleId: _selectedVehicleId!,
+                sourcePin: _sourcePinCtrl.text,
+                sourceCity: _sourceCityCtrl.text,
+                sourceDistrict: _sourceDistrictCtrl.text,
+                sourceState: _sourceStateCtrl.text,
+                sourceAddress: _sourceAddressCtrl.text.trim().isNotEmpty
+                    ? _sourceAddressCtrl.text.trim()
+                    : '${_sourceCityCtrl.text.trim()}, ${_sourceStateCtrl.text.trim()}',
+                destinationPin: _destPinCtrl.text,
+                destCity: _destCityCtrl.text,
+                destDistrict: _destDistrictCtrl.text,
+                destState: _destStateCtrl.text,
+                destAddress: _destAddressCtrl.text.trim().isNotEmpty
+                    ? _destAddressCtrl.text.trim()
+                    : '${_destCityCtrl.text.trim()}, ${_destStateCtrl.text.trim()}',
+                materialDescription: _materialCtrl.text.isNotEmpty ? _materialCtrl.text : null,
+                weight: double.tryParse(_weightCtrl.text.trim()),
+                transportationCharge: double.tryParse(_transChargeCtrl.text.trim()) ?? 0.0,
+                customPartiesFields: partiesMap,
+                customChargesFields: chargesMap,
+                totalAmount: _totalAmount,
+                paymentMethod: _paymentMethod,
+                paymentStatus: _paymentStatus,
+                remarks: _remarksCtrl.text,
+              );
+
+              context.pushNamed(
+                RouteNames.previewInvoice,
+                extra: {
+                  'invoice': invoice,
+                  'firm': availableFirms.firstWhere((f) => f.id == _selectedFirmId, orElse: () => fallbackFirm),
+                  'customer': customer,
+                  'vehicle': vehicle,
+                },
+              );
+            },
+            icon: const Icon(Icons.remove_red_eye),
+            label: const Text('Preview Invoice'),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
+          ),
+          const SizedBox(height: 16),
+          AppButton(
+            text: 'Save Invoice',
+            isLoading: _isLoading,
+            onPressed: _saveInvoice,
+            width: double.infinity,
+          ),
         ],
       ),
+    );
+
+    final formFieldsColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section 1: Entities
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Parties & Vehicle', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            IconButton.filledTonal(
+              onPressed: () => _addCustomField(true),
+              icon: const Icon(Icons.add),
+              tooltip: 'Add Custom Field',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  firmField,
+                  const SizedBox(height: 16),
+                  customerField,
+                  const SizedBox(height: 16),
+                  vehicleField,
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: firmField),
+                  const SizedBox(width: 16),
+                  Expanded(child: customerField),
+                  const SizedBox(width: 16),
+                  Expanded(child: vehicleField),
+                ],
+              ),
+        
+        // Dynamic Custom Parties & Vehicle Level Fields
+        if (_customPartiesFields.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: _customPartiesFields.keys.map((key) {
+              return SizedBox(
+                width: isMobile ? double.infinity : 250,
+                child: AppTextField(
+                  controller: _customPartiesCtrls[key],
+                  label: key,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+                    onPressed: () {
+                      setState(() {
+                        _customPartiesFields.remove(key);
+                        _customPartiesCtrls.remove(key);
+                      });
+                    },
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+        const SizedBox(height: 32),
+        
+        // Section 2: Trip & Location
+        Text('Trip Details', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  sourcePinField,
+                  const SizedBox(height: 16),
+                  sourceCityField,
+                  const SizedBox(height: 16),
+                  sourceStateField,
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: sourcePinField),
+                  const SizedBox(width: 16),
+                  Expanded(child: sourceCityField),
+                  const SizedBox(width: 16),
+                  Expanded(child: sourceStateField),
+                ],
+              ),
+        if (_isLoadingSourcePin) ...[
+          const SizedBox(height: 8),
+          const LinearProgressIndicator(),
+          const SizedBox(height: 8),
+        ] else if (profile.enablePostOfficeSelection && _sourcePinOptions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<PinCodeDetails>(
+            value: _selectedSourcePinOption,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Select Source Post Office / Area (${_sourcePinOptions.length} available)',
+              prefixIcon: const Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            items: _sourcePinOptions.map((opt) {
+              return DropdownMenuItem<PinCodeDetails>(
+                value: opt,
+                child: Text(
+                  '${opt.name} (${opt.city}, ${opt.state})',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (selected) {
+              if (selected != null) {
+                _onSelectSourceLocation(selected);
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 16),
+        AppTextField(
+          controller: _sourceAddressCtrl,
+          label: 'Source Detailed Address / Street (Optional)',
+          hint: 'Enter building, street, or landmark if needed',
+        ),
+        const SizedBox(height: 24),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  destPinField,
+                  const SizedBox(height: 16),
+                  destCityField,
+                  const SizedBox(height: 16),
+                  destStateField,
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: destPinField),
+                  const SizedBox(width: 16),
+                  Expanded(child: destCityField),
+                  const SizedBox(width: 16),
+                  Expanded(child: destStateField),
+                ],
+              ),
+        if (_isLoadingDestPin) ...[
+          const SizedBox(height: 8),
+          const LinearProgressIndicator(),
+          const SizedBox(height: 8),
+        ] else if (profile.enablePostOfficeSelection && _destPinOptions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<PinCodeDetails>(
+            value: _selectedDestPinOption,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Select Destination Post Office / Area (${_destPinOptions.length} available)',
+              prefixIcon: const Icon(Icons.place_rounded, color: AppColors.primaryBlue),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            items: _destPinOptions.map((opt) {
+              return DropdownMenuItem<PinCodeDetails>(
+                value: opt,
+                child: Text(
+                  '${opt.name} (${opt.city}, ${opt.state})',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (selected) {
+              if (selected != null) {
+                _onSelectDestLocation(selected);
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 16),
+        AppTextField(
+          controller: _destAddressCtrl,
+          label: 'Dest. Detailed Address / Street (Optional)',
+          hint: 'Enter building, street, or landmark if needed',
+        ),
+        const SizedBox(height: 32),
+
+        // Section 3: Material & Charges
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Cargo & Charges', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            IconButton.filledTonal(
+              onPressed: () => _addCustomField(false),
+              icon: const Icon(Icons.add),
+              tooltip: 'Add Custom Charge',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  materialField,
+                  const SizedBox(height: 16),
+                  weightField,
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: materialField),
+                  const SizedBox(width: 16),
+                  Expanded(child: weightField),
+                ],
+              ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            SizedBox(
+              width: isMobile ? double.infinity : 250,
+              child: AppTextField(
+                controller: _transChargeCtrl,
+                label: 'Transportation Charge',
+                keyboardType: TextInputType.number,
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Required';
+                  if (double.tryParse(val) == null) return 'Must be a number';
+                  return null;
+                },
+              ),
+            ),
+            
+            // Render Dynamic Custom Charges Fields
+            ..._customChargesFields.keys.map((key) {
+              return SizedBox(
+                width: isMobile ? double.infinity : 250,
+                child: AppTextField(
+                  controller: _customChargesCtrls[key],
+                  label: key,
+                  keyboardType: TextInputType.number,
+                  validator: (val) => val != null && val.isNotEmpty && double.tryParse(val) == null ? 'Must be a number' : null,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+                    onPressed: () {
+                      setState(() {
+                        _customChargesFields.remove(key);
+                        _customChargesCtrls.remove(key);
+                        _calculateTotal();
+                      });
+                    },
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+        const SizedBox(height: 32),
+        
+        // Section 4: Payment
+        Text('Payment & Remarks', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  paymentMethodField,
+                  const SizedBox(height: 16),
+                  paymentStatusField,
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: paymentMethodField),
+                  const SizedBox(width: 16),
+                  Expanded(child: paymentStatusField),
+                ],
+              ),
+        const SizedBox(height: 16),
+        AppTextField(controller: _remarksCtrl, label: 'Remarks', maxLines: 3),
+        const SizedBox(height: 80), // padding for scroll
+      ],
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.invoice == null ? 'Create Invoice' : 'Edit Invoice'),
+      ),
+      body: isMobile
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    formFieldsColumn,
+                    const SizedBox(height: 8),
+                    liveTotalCard,
+                  ],
+                ),
+              ),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Form Content
+                Expanded(
+                  flex: 2,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: formFieldsColumn,
+                    ),
+                  ),
+                ),
+                
+                // Live Total Card Sidebar
+                SizedBox(
+                  width: 350,
+                  child: liveTotalCard,
+                ),
+              ],
+            ),
     );
   }
 }

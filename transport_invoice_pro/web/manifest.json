@@ -1,6 +1,6 @@
 {
-    "name": "transport_invoice_pro",
-    "short_name": "transport_invoice_pro",
+    "name": "Transport Invoice Pro",
+    "short_name": "Transport Invoice Pro",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
