@@ -151,12 +151,11 @@ class DashboardOverviewTab extends ConsumerWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: UIConstants.spacing16),
-
-            // Metrics Grid (Responsive Layout)
+            const SizedBox(height: UIConstants.spacing16),             // Metrics Grid (Responsive Layout)
             ResponsiveLayout(
               mobile: _buildMetricsGrid(
                 crossAxisCount: 2,
+                childAspectRatio: MediaQuery.of(context).size.width < 360 ? 0.9 : 1.05,
                 todayRevenue: todayRevenue,
                 todayInvoicesCount: todayInvoicesCount,
                 pendingPaymentsAmount: pendingPaymentsAmount,
@@ -166,6 +165,7 @@ class DashboardOverviewTab extends ConsumerWidget {
               ),
               tablet: _buildMetricsGrid(
                 crossAxisCount: 3,
+                childAspectRatio: 1.3,
                 todayRevenue: todayRevenue,
                 todayInvoicesCount: todayInvoicesCount,
                 pendingPaymentsAmount: pendingPaymentsAmount,
@@ -175,6 +175,7 @@ class DashboardOverviewTab extends ConsumerWidget {
               ),
               desktop: _buildMetricsGrid(
                 crossAxisCount: 5,
+                childAspectRatio: 1.25,
                 todayRevenue: todayRevenue,
                 todayInvoicesCount: todayInvoicesCount,
                 pendingPaymentsAmount: pendingPaymentsAmount,
@@ -196,7 +197,7 @@ class DashboardOverviewTab extends ConsumerWidget {
 
             // Quick Actions Grid
             ResponsiveLayout(
-              mobile: _buildQuickActionsGrid(context, crossAxisCount: 1, aspectRatio: 4.8),
+              mobile: _buildQuickActionsGrid(context, crossAxisCount: 1, aspectRatio: 3.2),
               tablet: _buildQuickActionsGrid(context, crossAxisCount: 3, aspectRatio: 4.2),
               desktop: _buildQuickActionsGrid(context, crossAxisCount: 3, aspectRatio: 5.0),
             ),
@@ -216,6 +217,7 @@ class DashboardOverviewTab extends ConsumerWidget {
 
   Widget _buildMetricsGrid({
     required int crossAxisCount,
+    double childAspectRatio = 1.25,
     required double todayRevenue,
     required int todayInvoicesCount,
     required double pendingPaymentsAmount,
@@ -229,7 +231,7 @@ class DashboardOverviewTab extends ConsumerWidget {
       crossAxisCount: crossAxisCount,
       crossAxisSpacing: UIConstants.spacing16,
       mainAxisSpacing: UIConstants.spacing16,
-      childAspectRatio: 1.25,
+      childAspectRatio: childAspectRatio,
       children: [
         MetricCard(
           title: "Today's Revenue",

@@ -162,21 +162,43 @@ class RecentInvoicesCard extends StatelessWidget {
                             _buildStatusBadge(theme, item.status),
                           ],
                         ),
-                        if (item.onEdit != null) ...[
-                          const SizedBox(width: 4),
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryBlue),
-                            tooltip: 'Edit Invoice',
-                            onPressed: item.onEdit,
-                          ),
-                        ],
-                        if (item.onShare != null) ...[
-                          const SizedBox(width: 4),
-                          IconButton(
-                            icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primaryBlue),
-                            tooltip: 'Share PDF',
-                            onPressed: item.onShare,
-                          ),
+                        if (MediaQuery.of(context).size.width < 600) ...[
+                          if (item.onEdit != null || item.onShare != null) ...[
+                            const SizedBox(width: 4),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, size: 20, color: AppColors.textSecondaryLight),
+                              itemBuilder: (context) => [
+                                if (item.onEdit != null)
+                                  const PopupMenuItem(value: 'edit', child: Text('Edit Invoice')),
+                                if (item.onShare != null)
+                                  const PopupMenuItem(value: 'share', child: Text('Share PDF')),
+                              ],
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  item.onEdit?.call();
+                                } else if (value == 'share') {
+                                  item.onShare?.call();
+                                }
+                              },
+                            ),
+                          ],
+                        ] else ...[
+                          if (item.onEdit != null) ...[
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryBlue),
+                              tooltip: 'Edit Invoice',
+                              onPressed: item.onEdit,
+                            ),
+                          ],
+                          if (item.onShare != null) ...[
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primaryBlue),
+                              tooltip: 'Share PDF',
+                              onPressed: item.onShare,
+                            ),
+                          ],
                         ],
                       ],
                     ),

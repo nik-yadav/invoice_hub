@@ -981,134 +981,136 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
             ? Border.all(color: Colors.grey.withOpacity(0.2))
             : Border(left: BorderSide(color: Colors.grey.withOpacity(0.2))),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppTextField(
-            controller: _invoiceNumberCtrl,
-            label: 'Invoice Number',
-            readOnly: true,
-            validator: (val) => val!.isEmpty ? 'Required' : null,
-          ),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: () async {
-              final now = DateTime.now();
-              final date = await showDatePicker(
-                context: context,
-                initialDate: _invoiceDate.isAfter(now) ? now : _invoiceDate,
-                firstDate: DateTime(2000),
-                lastDate: now,
-              );
-              if (date != null) setState(() => _invoiceDate = date);
-            },
-            child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'Invoice Date', border: OutlineInputBorder()),
-              child: Text(DateFormat('dd MMM yyyy').format(_invoiceDate)),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTextField(
+              controller: _invoiceNumberCtrl,
+              label: 'Invoice Number',
+              readOnly: true,
+              validator: (val) => val!.isEmpty ? 'Required' : null,
             ),
-          ),
-          const SizedBox(height: 32),
-          AppCard(
-            color: AppColors.primaryBlue,
-            child: Column(
-              children: [
-                const Text('Total Amount', style: TextStyle(color: Colors.white70, fontSize: 16)),
-                const SizedBox(height: 8),
-                Text(
-                  Formatters.formatCurrency(_totalAmount),
-                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          if (!isMobile) const Spacer() else const SizedBox(height: 24),
-          OutlinedButton.icon(
-            onPressed: () async {
-              if (!(_formKey.currentState?.validate() ?? false)) return;
-
-              // Guarantee auto-created customer and vehicle are written to Hive first
-              await _ensureEntitiesSaved();
-
-              final customer = customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
-              final vehicle = vehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
-
-              if (customer == null || vehicle == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please select or create Customer and Vehicle before previewing'),
-                    backgroundColor: AppColors.error,
-                  ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                final now = DateTime.now();
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _invoiceDate.isAfter(now) ? now : _invoiceDate,
+                  firstDate: DateTime(2000),
+                  lastDate: now,
                 );
-                return;
-              }
+                if (date != null) setState(() => _invoiceDate = date);
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: 'Invoice Date', border: OutlineInputBorder()),
+                child: Text(DateFormat('dd MMM yyyy').format(_invoiceDate)),
+              ),
+            ),
+            const SizedBox(height: 32),
+            AppCard(
+              color: AppColors.primaryBlue,
+              child: Column(
+                children: [
+                  const Text('Total Amount', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text(
+                    Formatters.formatCurrency(_totalAmount),
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: () async {
+                if (!(_formKey.currentState?.validate() ?? false)) return;
 
-              // Gather dynamic custom inputs
-              final partiesMap = <String, String>{};
-              _customPartiesCtrls.forEach((k, ctrl) {
-                partiesMap[k] = ctrl.text.trim();
-              });
+                // Guarantee auto-created customer and vehicle are written to Hive first
+                await _ensureEntitiesSaved();
 
-              final chargesMap = <String, double>{};
-              _customChargesCtrls.forEach((k, ctrl) {
-                chargesMap[k] = double.tryParse(ctrl.text.trim()) ?? 0.0;
-              });
+                final customer = customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
+                final vehicle = vehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
 
-              final invoice = InvoiceModel(
-                id: widget.invoice?.id ?? const Uuid().v4(),
-                invoiceNumber: _invoiceNumberCtrl.text,
-                invoiceDate: _invoiceDate,
-                tripDate: _tripDate,
-                firmId: _selectedFirmId!,
-                customerId: _selectedCustomerId!,
-                vehicleId: _selectedVehicleId!,
-                sourcePin: _sourcePinCtrl.text,
-                sourceCity: _sourceCityCtrl.text,
-                sourceDistrict: _sourceDistrictCtrl.text,
-                sourceState: _sourceStateCtrl.text,
-                sourceAddress: _sourceAddressCtrl.text.trim().isNotEmpty
-                    ? _sourceAddressCtrl.text.trim()
-                    : '${_sourceCityCtrl.text.trim()}, ${_sourceStateCtrl.text.trim()}',
-                destinationPin: _destPinCtrl.text,
-                destCity: _destCityCtrl.text,
-                destDistrict: _destDistrictCtrl.text,
-                destState: _destStateCtrl.text,
-                destAddress: _destAddressCtrl.text.trim().isNotEmpty
-                    ? _destAddressCtrl.text.trim()
-                    : '${_destCityCtrl.text.trim()}, ${_destStateCtrl.text.trim()}',
-                materialDescription: _materialCtrl.text.isNotEmpty ? _materialCtrl.text : null,
-                weight: double.tryParse(_weightCtrl.text.trim()),
-                transportationCharge: double.tryParse(_transChargeCtrl.text.trim()) ?? 0.0,
-                customPartiesFields: partiesMap,
-                customChargesFields: chargesMap,
-                totalAmount: _totalAmount,
-                paymentMethod: _paymentMethod,
-                paymentStatus: _paymentStatus,
-                remarks: _remarksCtrl.text,
-              );
+                if (customer == null || vehicle == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select or create Customer and Vehicle before previewing'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                  return;
+                }
 
-              context.pushNamed(
-                RouteNames.previewInvoice,
-                extra: {
-                  'invoice': invoice,
-                  'firm': availableFirms.firstWhere((f) => f.id == _selectedFirmId, orElse: () => fallbackFirm),
-                  'customer': customer,
-                  'vehicle': vehicle,
-                },
-              );
-            },
-            icon: const Icon(Icons.remove_red_eye),
-            label: const Text('Preview Invoice'),
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
-          ),
-          const SizedBox(height: 16),
-          AppButton(
-            text: 'Save Invoice',
-            isLoading: _isLoading,
-            onPressed: _saveInvoice,
-            width: double.infinity,
-          ),
-        ],
+                // Gather dynamic custom inputs
+                final partiesMap = <String, String>{};
+                _customPartiesCtrls.forEach((k, ctrl) {
+                  partiesMap[k] = ctrl.text.trim();
+                });
+
+                final chargesMap = <String, double>{};
+                _customChargesCtrls.forEach((k, ctrl) {
+                  chargesMap[k] = double.tryParse(ctrl.text.trim()) ?? 0.0;
+                });
+
+                final invoice = InvoiceModel(
+                  id: widget.invoice?.id ?? const Uuid().v4(),
+                  invoiceNumber: _invoiceNumberCtrl.text,
+                  invoiceDate: _invoiceDate,
+                  tripDate: _tripDate,
+                  firmId: _selectedFirmId!,
+                  customerId: _selectedCustomerId!,
+                  vehicleId: _selectedVehicleId!,
+                  sourcePin: _sourcePinCtrl.text,
+                  sourceCity: _sourceCityCtrl.text,
+                  sourceDistrict: _sourceDistrictCtrl.text,
+                  sourceState: _sourceStateCtrl.text,
+                  sourceAddress: _sourceAddressCtrl.text.trim().isNotEmpty
+                      ? _sourceAddressCtrl.text.trim()
+                      : '${_sourceCityCtrl.text.trim()}, ${_sourceStateCtrl.text.trim()}',
+                  destinationPin: _destPinCtrl.text,
+                  destCity: _destCityCtrl.text,
+                  destDistrict: _destDistrictCtrl.text,
+                  destState: _destStateCtrl.text,
+                  destAddress: _destAddressCtrl.text.trim().isNotEmpty
+                      ? _destAddressCtrl.text.trim()
+                      : '${_destCityCtrl.text.trim()}, ${_destStateCtrl.text.trim()}',
+                  materialDescription: _materialCtrl.text.isNotEmpty ? _materialCtrl.text : null,
+                  weight: double.tryParse(_weightCtrl.text.trim()),
+                  transportationCharge: double.tryParse(_transChargeCtrl.text.trim()) ?? 0.0,
+                  customPartiesFields: partiesMap,
+                  customChargesFields: chargesMap,
+                  totalAmount: _totalAmount,
+                  paymentMethod: _paymentMethod,
+                  paymentStatus: _paymentStatus,
+                  remarks: _remarksCtrl.text,
+                );
+
+                context.pushNamed(
+                  RouteNames.previewInvoice,
+                  extra: {
+                    'invoice': invoice,
+                    'firm': availableFirms.firstWhere((f) => f.id == _selectedFirmId, orElse: () => fallbackFirm),
+                    'customer': customer,
+                    'vehicle': vehicle,
+                  },
+                );
+              },
+              icon: const Icon(Icons.remove_red_eye),
+              label: const Text('Preview Invoice'),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
+            ),
+            const SizedBox(height: 16),
+            AppButton(
+              text: 'Save Invoice',
+              isLoading: _isLoading,
+              onPressed: _saveInvoice,
+              width: double.infinity,
+            ),
+          ],
+        ),
       ),
     );
 

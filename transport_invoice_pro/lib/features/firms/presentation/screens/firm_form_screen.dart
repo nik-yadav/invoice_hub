@@ -189,6 +189,21 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.firm != null;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final cityField = AppTextField(
+      controller: _cityController,
+      label: 'City',
+      readOnly: true,
+      hint: 'Auto-fetched from PIN',
+    );
+
+    final stateField = AppTextField(
+      controller: _stateController,
+      label: 'State',
+      readOnly: true,
+      hint: 'Auto-fetched from PIN',
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -271,27 +286,21 @@ class _FirmFormScreenState extends ConsumerState<FirmFormScreen> {
                 validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: AppTextField(
-                      controller: _cityController,
-                      label: 'City',
-                      readOnly: true,
-                      hint: 'Auto-fetched from PIN',
+              isMobile
+                  ? Column(
+                      children: [
+                        cityField,
+                        const SizedBox(height: 16),
+                        stateField,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: cityField),
+                        const SizedBox(width: 16),
+                        Expanded(child: stateField),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: AppTextField(
-                      controller: _stateController,
-                      label: 'State',
-                      readOnly: true,
-                      hint: 'Auto-fetched from PIN',
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 16),
               AppTextField(
                 controller: _pinController,

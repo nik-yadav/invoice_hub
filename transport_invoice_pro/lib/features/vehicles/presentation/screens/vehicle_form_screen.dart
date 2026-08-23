@@ -104,6 +104,27 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final typeField = AppTextField(
+      controller: _typeController,
+      label: 'Vehicle Type',
+      hint: 'e.g. Open Truck, Trailer',
+      prefixIcon: const Icon(Icons.local_shipping),
+      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+    );
+
+    final capacityField = AppTextField(
+      controller: _capacityController,
+      label: 'Capacity (Tons)',
+      prefixIcon: const Icon(Icons.scale),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      validator: (val) {
+        if (val == null || val.isEmpty) return 'Required';
+        if (double.tryParse(val) == null) return 'Invalid number';
+        return null;
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -129,33 +150,21 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                     validator: Validators.validateVehicleNumber,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppTextField(
-                          controller: _typeController,
-                          label: 'Vehicle Type',
-                          hint: 'e.g. Open Truck, Trailer',
-                          prefixIcon: const Icon(Icons.local_shipping),
-                          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                  isMobile
+                      ? Column(
+                          children: [
+                            typeField,
+                            const SizedBox(height: 16),
+                            capacityField,
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(child: typeField),
+                            const SizedBox(width: 16),
+                            Expanded(child: capacityField),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: AppTextField(
-                          controller: _capacityController,
-                          label: 'Capacity (Tons)',
-                          prefixIcon: const Icon(Icons.scale),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          validator: (val) {
-                            if (val == null || val.isEmpty) return 'Required';
-                            if (double.tryParse(val) == null) return 'Invalid number';
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 32),
                   Text('Driver Information', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),

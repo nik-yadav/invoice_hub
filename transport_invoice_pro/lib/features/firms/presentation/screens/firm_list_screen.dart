@@ -153,13 +153,13 @@ class _FirmCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 14, color: AppColors.surfaceLight),
+                        const Icon(Icons.location_on, size: 14, color: AppColors.textSecondaryLight),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             '${firm.city}, ${firm.state}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.surfaceLight,
+                                  color: AppColors.textSecondaryLight,
                                 ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

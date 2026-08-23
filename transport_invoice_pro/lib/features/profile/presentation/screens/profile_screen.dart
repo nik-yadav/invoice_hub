@@ -455,8 +455,11 @@ class ProfileScreen extends ConsumerWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                Wrap(
+                                  spacing: UIConstants.spacing8,
+                                  runSpacing: UIConstants.spacing4,
+                                  alignment: WrapAlignment.end,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     if (!firm.isDefault)
                                       TextButton.icon(
