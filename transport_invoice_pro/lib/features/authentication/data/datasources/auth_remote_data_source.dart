@@ -25,10 +25,11 @@ class AuthRemoteDataSource {
 
       if (response['success'] == true) {
         final token = response['token'] as String? ?? '';
+        final refreshToken = response['refreshToken'] as String? ?? '';
         final userData = response['user'] as Map<String, dynamic>;
         final user = UserModel.fromJson(userData);
 
-        await UserSession.saveSession(user, token);
+        await UserSession.saveSession(user, token, refreshToken);
         _userStreamController.add(user);
         return user;
       }
@@ -42,7 +43,8 @@ class AuthRemoteDataSource {
         if (sbResponse.user != null) {
           final user = UserModel.fromSupabaseUser(sbResponse.user!);
           final sessionToken = sbResponse.session?.accessToken ?? '';
-          await UserSession.saveSession(user, sessionToken);
+          final sbRefreshToken = sbResponse.session?.refreshToken ?? '';
+          await UserSession.saveSession(user, sessionToken, sbRefreshToken);
           _userStreamController.add(user);
           return user;
         }
@@ -70,10 +72,11 @@ class AuthRemoteDataSource {
 
       if (response['success'] == true) {
         final token = response['token'] as String? ?? '';
+        final refreshToken = response['refreshToken'] as String? ?? '';
         final userData = response['user'] as Map<String, dynamic>;
         final user = UserModel.fromJson(userData);
 
-        await UserSession.saveSession(user, token);
+        await UserSession.saveSession(user, token, refreshToken);
         _userStreamController.add(user);
         return user;
       }
@@ -92,7 +95,8 @@ class AuthRemoteDataSource {
         if (sbResponse.user != null) {
           final user = UserModel.fromSupabaseUser(sbResponse.user!);
           final sessionToken = sbResponse.session?.accessToken ?? '';
-          await UserSession.saveSession(user, sessionToken);
+          final sbRefreshToken = sbResponse.session?.refreshToken ?? '';
+          await UserSession.saveSession(user, sessionToken, sbRefreshToken);
           _userStreamController.add(user);
           return user;
         }
@@ -113,7 +117,9 @@ class AuthRemoteDataSource {
   /// Sign out current user session.
   Future<void> signOut() async {
     try {
-      await ApiService.post('/auth/logout', {});
+      await ApiService.post('/auth/logout', {
+        'refreshToken': UserSession.refreshToken ?? '',
+      });
     } catch (_) {}
     await UserSession.clearSession();
     _userStreamController.add(null);

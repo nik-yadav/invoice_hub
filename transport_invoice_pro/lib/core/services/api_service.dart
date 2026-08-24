@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../app/app_env.dart';
+import 'user_session.dart';
 
 /// Central API Service for performing HTTP requests to the Node.js Express backend.
 class ApiService {
@@ -27,13 +29,76 @@ class ApiService {
     return headers;
   }
 
-  /// Execute an HTTP request with error sanitization for raw network exceptions.
-  static Future<dynamic> _execute(Future<http.Response> Function() requestFn) async {
+  static bool _isRefreshing = false;
+  static final List<Completer<void>> _refreshQueue = [];
+
+  /// Renew expired user session transparently using Refresh Token Rotation.
+  static Future<bool> _recreateSession() async {
+    if (_isRefreshing) {
+      final completer = Completer<void>();
+      _refreshQueue.add(completer);
+      await completer.future;
+      return UserSession.token != null;
+    }
+
+    _isRefreshing = true;
+    try {
+      final refreshTok = UserSession.refreshToken;
+      if (refreshTok == null || refreshTok.isEmpty) {
+        return false;
+      }
+
+      final uri = Uri.parse('${AppEnv.apiBaseUrl}/auth/recreate-session');
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'refreshToken': refreshTok}),
+      );
+
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final newToken = body['token'] as String;
+        final newRefreshToken = body['refreshToken'] as String;
+        await UserSession.updateTokens(newToken, newRefreshToken);
+        return true;
+      }
+    } catch (e) {
+      if (kDebugMode) print('[ApiService _recreateSession Error]: $e');
+    } finally {
+      _isRefreshing = false;
+      for (final completer in _refreshQueue) {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+      _refreshQueue.clear();
+    }
+    return false;
+  }
+
+  /// Request execution wrapper with auto-retry on 401 Unauthorized and network error sanitization.
+  static Future<dynamic> _request(
+    Future<http.Response> Function() requestFn, {
+    int retryCount = 0,
+  }) async {
     try {
       final response = await requestFn();
       return _handleResponse(response);
     } catch (e) {
-      // Map raw connection/network errors to clean, user-friendly messages
+      // 1. Transparent token refresh on 401 Unauthorized
+      if (e is ApiException && e.statusCode == 401 && retryCount < 1) {
+        final refreshSuccess = await _recreateSession();
+        if (refreshSuccess) {
+          return _request(requestFn, retryCount: 1);
+        } else {
+          await UserSession.clearSession();
+        }
+      }
+
+      // 2. Map raw connection/network errors to clean, user-friendly messages
       if (e is http.ClientException || 
           e.toString().contains('SocketException') || 
           e.toString().contains('HandshakeException')) {
@@ -42,6 +107,7 @@ class ApiService {
           503,
         );
       }
+
       rethrow;
     }
   }
@@ -49,13 +115,13 @@ class ApiService {
   /// Perform HTTP GET request.
   static Future<dynamic> get(String endpoint, {Map<String, String>? queryParams}) async {
     final uri = Uri.parse('${AppEnv.apiBaseUrl}$endpoint').replace(queryParameters: queryParams);
-    return _execute(() => http.get(uri, headers: _headers));
+    return _request(() => http.get(uri, headers: _headers));
   }
 
   /// Perform HTTP POST request.
   static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     final uri = Uri.parse('${AppEnv.apiBaseUrl}$endpoint');
-    return _execute(() => http.post(
+    return _request(() => http.post(
       uri,
       headers: _headers,
       body: jsonEncode(body),
@@ -65,7 +131,7 @@ class ApiService {
   /// Perform HTTP PUT request.
   static Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     final uri = Uri.parse('${AppEnv.apiBaseUrl}$endpoint');
-    return _execute(() => http.put(
+    return _request(() => http.put(
       uri,
       headers: _headers,
       body: jsonEncode(body),
@@ -75,7 +141,7 @@ class ApiService {
   /// Perform HTTP PATCH request.
   static Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
     final uri = Uri.parse('${AppEnv.apiBaseUrl}$endpoint');
-    return _execute(() => http.patch(
+    return _request(() => http.patch(
       uri,
       headers: _headers,
       body: jsonEncode(body),
@@ -85,7 +151,7 @@ class ApiService {
   /// Perform HTTP DELETE request.
   static Future<dynamic> delete(String endpoint) async {
     final uri = Uri.parse('${AppEnv.apiBaseUrl}$endpoint');
-    return _execute(() => http.delete(uri, headers: _headers));
+    return _request(() => http.delete(uri, headers: _headers));
   }
 
   /// Helper to handle and parse HTTP response, mapping raw errors to user-friendly messages.

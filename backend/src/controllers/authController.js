@@ -1,21 +1,42 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { prisma } = require('../config/prisma');
 
-// Helper to sign JWT token
-const generateToken = (user) => {
-  const secret = process.env.JWT_SECRET || 'super-secret-jwt-key-transport-invoice-pro-2026';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign(
+// Helper to generate access + refresh tokens and create a DB session
+const generateTokensAndCreateSession = async (user, req) => {
+  const accessTokenSecret = process.env.JWT_SECRET || 'super-secret-jwt-key-transport-invoice-pro-2026';
+  const accessTokenExpires = process.env.JWT_EXPIRES_IN || '1h'; // Short-lived access token
+  
+  const accessToken = jwt.sign(
     {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
       companyName: user.companyName,
     },
-    secret,
-    { expiresIn }
+    accessTokenSecret,
+    { expiresIn: accessTokenExpires }
   );
+
+  const refreshToken = crypto.randomBytes(40).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // Refresh token expires in 7 days
+
+  const deviceInfo = req.headers['user-agent'] || 'Unknown Device';
+  const ipAddress = req.ip || req.connection.remoteAddress || '0.0.0.0';
+
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      refreshToken,
+      deviceInfo,
+      ipAddress,
+      expiresAt,
+    },
+  });
+
+  return { accessToken, refreshToken };
 };
 
 /**
@@ -58,12 +79,13 @@ exports.register = async (req, res, next) => {
       },
     });
 
-    const token = generateToken(newUser);
+    const { accessToken, refreshToken } = await generateTokensAndCreateSession(newUser, req);
 
     return res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -113,12 +135,13 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    const token = generateToken(user);
+    const { accessToken, refreshToken } = await generateTokensAndCreateSession(user, req);
 
     return res.status(200).json({
       success: true,
       message: 'Login successful',
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -227,9 +250,114 @@ exports.resetPassword = async (req, res, next) => {
  */
 exports.logout = async (req, res, next) => {
   try {
+    const { refreshToken } = req.body;
+    
+    if (refreshToken) {
+      await prisma.session.updateMany({
+        where: { refreshToken },
+        data: { isValid: false },
+      });
+    }
+
+    // Invalidate sessions for this user on logout
+    if (req.user && req.user.id) {
+      await prisma.session.updateMany({
+        where: { userId: req.user.id },
+        data: { isValid: false },
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @route   POST /api/v1/auth/recreate-session
+ * @desc    Recreate user session using a valid refresh token (Refresh Token Rotation)
+ * @access  Public
+ */
+exports.recreateSession = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required',
+      });
+    }
+
+    // 1. Find session in database
+    const session = await prisma.session.findUnique({
+      where: { refreshToken },
+      include: { user: true },
+    });
+
+    // 2. Validate session
+    if (!session || !session.isValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or revoked session. Please log in again.',
+      });
+    }
+
+    // Check expiration
+    if (new Date() > session.expiresAt) {
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { isValid: false },
+      });
+      return res.status(401).json({
+        success: false,
+        message: 'Session has expired. Please log in again.',
+      });
+    }
+
+    // 3. Create new access and rotated refresh tokens
+    const accessTokenSecret = process.env.JWT_SECRET || 'super-secret-jwt-key-transport-invoice-pro-2026';
+    const accessTokenExpires = process.env.JWT_EXPIRES_IN || '1h';
+    
+    const newAccessToken = jwt.sign(
+      {
+        id: session.user.id,
+        email: session.user.email,
+        fullName: session.user.fullName,
+        companyName: session.user.companyName,
+      },
+      accessTokenSecret,
+      { expiresIn: accessTokenExpires }
+    );
+
+    const newRefreshToken = crypto.randomBytes(40).toString('hex');
+    const newExpiresAt = new Date();
+    newExpiresAt.setDate(newExpiresAt.getDate() + 7);
+
+    // 4. Invalidate old session and create a new one (Rotation)
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { isValid: false },
+    });
+
+    await prisma.session.create({
+      data: {
+        userId: session.user.id,
+        refreshToken: newRefreshToken,
+        deviceInfo: req.headers['user-agent'] || 'Unknown Device',
+        ipAddress: req.ip || req.connection.remoteAddress || '0.0.0.0',
+        expiresAt: newExpiresAt,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Session recreated successfully',
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
     });
   } catch (error) {
     next(error);
