@@ -92,6 +92,19 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  /// Request Resending Verification Email.
+  Future<bool> resendVerificationEmail({required String email}) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.resendVerificationEmail(email: email);
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e is supabase.AuthException ? e.message : e.toString(), st);
+      return false;
+    }
+  }
+
   /// Perform User Sign Out.
   Future<bool> logout() async {
     state = const AsyncValue.loading();

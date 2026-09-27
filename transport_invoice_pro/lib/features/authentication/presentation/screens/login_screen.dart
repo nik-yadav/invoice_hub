@@ -49,6 +49,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleResendVerification() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      AppToast.showError(context, 'Please enter a valid email address first.');
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    final success = await ref.read(authControllerProvider.notifier).resendVerificationEmail(
+          email: email,
+        );
+
+    if (success && mounted) {
+      AppToast.showSuccess(context, 'A new verification link has been sent to your email.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -107,14 +125,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               const SizedBox(height: UIConstants.spacing8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => context.pushNamed(RouteNames.forgotPassword),
-                  child: const Text('Forgot Password?'),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: isLoading ? null : _handleResendVerification,
+                    child: const Text('Resend Verification?'),
+                  ),
+                  TextButton(
+                    onPressed: isLoading
+                        ? null
+                        : () => context.pushNamed(RouteNames.forgotPassword),
+                    child: const Text('Forgot Password?'),
+                  ),
+                ],
               ),
               const SizedBox(height: UIConstants.spacing16),
               AppButton(

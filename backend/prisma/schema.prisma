@@ -9,20 +9,23 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  email       String     @unique
-  password    String
-  fullName    String?
-  companyName String?
-  phone       String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  customers   Customer[]
-  firms       Firm[]
-  invoices    Invoice[]
-  profile     Profile?
-  vehicles    Vehicle[]
-  sessions    Session[]
+  id                String     @id @default(uuid())
+  email             String     @unique
+  password          String
+  fullName          String?
+  companyName       String?
+  phone             String?
+  isVerified        Boolean    @default(false)
+  verificationToken String?    @unique
+  tokenExpiresAt    DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  customers         Customer[]
+  firms             Firm[]
+  invoices          Invoice[]
+  profile           Profile?
+  vehicles          Vehicle[]
+  sessions          Session[]
 }
 
 model Session {
@@ -147,4 +150,12 @@ model Invoice {
   firm                 Firm?     @relation(fields: [firmId], references: [id])
   user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle              Vehicle?  @relation(fields: [vehicleId], references: [id])
+}
+
+model BlockedSignup {
+  id        String   @id @default(uuid())
+  email     String
+  reason    String
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

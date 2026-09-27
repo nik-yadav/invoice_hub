@@ -76,8 +76,10 @@ class AuthRemoteDataSource {
         final userData = response['user'] as Map<String, dynamic>;
         final user = UserModel.fromJson(userData);
 
-        await UserSession.saveSession(user, token, refreshToken);
-        _userStreamController.add(user);
+        if (token.isNotEmpty) {
+          await UserSession.saveSession(user, token, refreshToken);
+          _userStreamController.add(user);
+        }
         return user;
       }
       throw ApiException(response['message'] ?? 'Registration failed', 400);
@@ -112,6 +114,11 @@ class AuthRemoteDataSource {
     } catch (e) {
       await _supabaseClient.auth.resetPasswordForEmail(email.trim());
     }
+  }
+
+  /// Request resending email verification link.
+  Future<void> resendVerificationEmail({required String email}) async {
+    await ApiService.post('/auth/resend-verification', {'email': email.trim()});
   }
 
   /// Sign out current user session.

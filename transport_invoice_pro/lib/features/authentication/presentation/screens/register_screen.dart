@@ -57,8 +57,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
 
     if (success && mounted) {
-      AppToast.showSuccess(context, 'Account created successfully! Welcome to Transport Invoice Pro.');
-      context.goNamed(RouteNames.dashboard);
+      AppToast.showSuccess(context, 'Registration successful! Please check your email to verify your account.');
+      context.goNamed(RouteNames.login);
     }
   }
 

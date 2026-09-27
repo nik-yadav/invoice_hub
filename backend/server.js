@@ -77,11 +77,23 @@ const authLimiter = rateLimit({
   }
 });
 
+const resendVerificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Limit each IP to 3 verification resend requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many verification email resend requests from this IP. Please try again after 15 minutes.'
+  }
+});
+
 // Apply rate limiters
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
 app.use('/api/v1/auth/forgot-password', authLimiter);
 app.use('/api/v1/auth/reset-password', authLimiter);
+app.use('/api/v1/auth/resend-verification', resendVerificationLimiter);
 app.use('/api/', generalLimiter);
 
 // Body Parsers (Increased limit to 10mb for image/signature uploads)
@@ -134,6 +146,27 @@ app.use('*', (req, res) => {
 // Global Error Handler Middleware
 app.use(errorHandler);
 
+// Background job to clean up unverified users older than 48 hours
+const runUnverifiedUsersCleanup = async () => {
+  try {
+    const cutoffTime = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const { prisma } = require('./src/config/prisma');
+    const deleteResult = await prisma.user.deleteMany({
+      where: {
+        isVerified: false,
+        createdAt: {
+          lt: cutoffTime,
+        },
+      },
+    });
+    if (deleteResult.count > 0) {
+      console.log(`🧹 Cleanup: Deleted ${deleteResult.count} unverified user accounts older than 48 hours.`);
+    }
+  } catch (error) {
+    console.error('⚠️ Error running unverified users cleanup job:', error.message);
+  }
+};
+
 // Start Server and Initialize Prisma Database
 app.listen(PORT, async () => {
   console.log(`===================================================`);
@@ -143,6 +176,14 @@ app.listen(PORT, async () => {
   console.log(`===================================================`);
 
   await initPrismaDb();
+
+  // Initialize disposable email blocklist (remote fetch + local cache + weekly update schedule)
+  const { initBlocklist } = require('./src/services/blocklistService');
+  await initBlocklist();
+
+  // Run cleanup job immediately and then daily (every 24 hours)
+  runUnverifiedUsersCleanup();
+  setInterval(runUnverifiedUsersCleanup, 24 * 60 * 60 * 1000);
 });
 
 module.exports = app;
