@@ -427,13 +427,27 @@ class InvoicePdfGenerator {
   }
 
   static String _formatStation(String city, String state, String address) {
-    final cityState = [city, state].where((s) => s.trim().isNotEmpty).join(', ');
+    final cleanCity = city.trim();
+    final cleanState = state.trim();
+    final cityState = [cleanCity, cleanState].where((s) => s.isNotEmpty).join(', ');
     final cleanAddr = address.trim();
+
     if (cleanAddr.isEmpty || cleanAddr == cityState) {
       return cityState.isNotEmpty ? cityState : 'N/A';
     }
     if (cityState.isEmpty) return cleanAddr;
-    if (cleanAddr.contains(cityState)) return cleanAddr;
-    return '$cityState ($cleanAddr)';
+
+    final lowerAddr = cleanAddr.toLowerCase();
+    final hasCity = cleanCity.isNotEmpty && lowerAddr.contains(cleanCity.toLowerCase());
+    final hasState = cleanState.isNotEmpty && lowerAddr.contains(cleanState.toLowerCase());
+
+    if (hasCity && hasState) {
+      return cleanAddr;
+    } else if (hasCity && !hasState && cleanState.isNotEmpty) {
+      return '$cleanAddr, $cleanState';
+    } else if (!hasCity && !hasState) {
+      return '$cleanAddr, $cityState';
+    }
+    return cleanAddr;
   }
 }

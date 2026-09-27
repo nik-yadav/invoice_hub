@@ -22,6 +22,11 @@ abstract class AuthRepository {
     required String email,
   });
 
+  /// Request resending verification email.
+  Future<void> resendVerificationEmail({
+    required String email,
+  });
+
   /// Sign out currently authenticated user.
   Future<void> logout();
 

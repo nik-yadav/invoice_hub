@@ -24,6 +24,7 @@ dependencies:
   # Local Storage & Caching
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  flutter_secure_storage: ^9.0.0
 
   # Document Generation & Printing
   pdf: ^3.10.10
