@@ -38,8 +38,11 @@ class PinCodeDetails {
 }
 
 class PinCodeService {
+  static final Map<String, List<PinCodeDetails>> _cache = {};
+
   static Future<List<PinCodeDetails>> fetchAllDetails(String pinCode) async {
     if (pinCode.length != 6) return [];
+    if (_cache.containsKey(pinCode)) return _cache[pinCode]!;
 
     try {
       final response = await http.get(Uri.parse('https://api.postalpincode.in/pincode/$pinCode'));
@@ -69,6 +72,7 @@ class PinCodeService {
               pinCode: pinCode,
             ));
           }
+          _cache[pinCode] = list;
           return list;
         }
       }

@@ -86,8 +86,60 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
   PinCodeDetails? _selectedDestPinOption;
   bool _isLoadingDestPin = false;
 
+  String _lastAutoSourceCityState = '';
+  String _lastAutoDestCityState = '';
+
+  void _syncSourceDetailedAddress() {
+    final city = _sourceCityCtrl.text.trim();
+    final state = _sourceStateCtrl.text.trim();
+    final newCityState = [city, state].where((s) => s.isNotEmpty).join(', ');
+
+    final currentAddr = _sourceAddressCtrl.text.trim();
+
+    if (currentAddr.isEmpty || currentAddr == _lastAutoSourceCityState) {
+      _sourceAddressCtrl.text = newCityState;
+    } else if (_lastAutoSourceCityState.isNotEmpty && currentAddr.endsWith(_lastAutoSourceCityState)) {
+      final prefix = currentAddr.substring(0, currentAddr.length - _lastAutoSourceCityState.length).trimRight();
+      if (newCityState.isEmpty) {
+        _sourceAddressCtrl.text = prefix;
+      } else {
+        _sourceAddressCtrl.text = prefix.endsWith(',') ? '$prefix $newCityState' : '$prefix, $newCityState';
+      }
+    } else if (_lastAutoSourceCityState.isEmpty && currentAddr.isNotEmpty && newCityState.isNotEmpty) {
+      if (!currentAddr.toLowerCase().contains(newCityState.toLowerCase())) {
+        _sourceAddressCtrl.text = currentAddr.endsWith(',') ? '$currentAddr $newCityState' : '$currentAddr, $newCityState';
+      }
+    }
+    _lastAutoSourceCityState = newCityState;
+  }
+
+  void _syncDestDetailedAddress() {
+    final city = _destCityCtrl.text.trim();
+    final state = _destStateCtrl.text.trim();
+    final newCityState = [city, state].where((s) => s.isNotEmpty).join(', ');
+
+    final currentAddr = _destAddressCtrl.text.trim();
+
+    if (currentAddr.isEmpty || currentAddr == _lastAutoDestCityState) {
+      _destAddressCtrl.text = newCityState;
+    } else if (_lastAutoDestCityState.isNotEmpty && currentAddr.endsWith(_lastAutoDestCityState)) {
+      final prefix = currentAddr.substring(0, currentAddr.length - _lastAutoDestCityState.length).trimRight();
+      if (newCityState.isEmpty) {
+        _destAddressCtrl.text = prefix;
+      } else {
+        _destAddressCtrl.text = prefix.endsWith(',') ? '$prefix $newCityState' : '$prefix, $newCityState';
+      }
+    } else if (_lastAutoDestCityState.isEmpty && currentAddr.isNotEmpty && newCityState.isNotEmpty) {
+      if (!currentAddr.toLowerCase().contains(newCityState.toLowerCase())) {
+        _destAddressCtrl.text = currentAddr.endsWith(',') ? '$currentAddr $newCityState' : '$currentAddr, $newCityState';
+      }
+    }
+    _lastAutoDestCityState = newCityState;
+  }
+
   void _onSelectSourceLocation(PinCodeDetails details) {
     final enablePostOffice = ref.read(profileControllerProvider).enablePostOfficeSelection;
+    final cityState = [details.city, details.state].where((s) => s.trim().isNotEmpty).join(', ');
     setState(() {
       _selectedSourcePinOption = details;
       _sourceCityCtrl.text = details.city;
@@ -95,12 +147,17 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       _sourceStateCtrl.text = details.state;
       if (enablePostOffice) {
         _sourceAddressCtrl.text = details.address;
+        _lastAutoSourceCityState = details.address;
+      } else {
+        _sourceAddressCtrl.text = cityState;
+        _lastAutoSourceCityState = cityState;
       }
     });
   }
 
   void _onSelectDestLocation(PinCodeDetails details) {
     final enablePostOffice = ref.read(profileControllerProvider).enablePostOfficeSelection;
+    final cityState = [details.city, details.state].where((s) => s.trim().isNotEmpty).join(', ');
     setState(() {
       _selectedDestPinOption = details;
       _destCityCtrl.text = details.city;
@@ -108,6 +165,10 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       _destStateCtrl.text = details.state;
       if (enablePostOffice) {
         _destAddressCtrl.text = details.address;
+        _lastAutoDestCityState = details.address;
+      } else {
+        _destAddressCtrl.text = cityState;
+        _lastAutoDestCityState = cityState;
       }
     });
   }
@@ -180,6 +241,8 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       _destDistrictCtrl.text = i.destDistrict;
       _destStateCtrl.text = i.destState;
       _destAddressCtrl.text = i.destAddress;
+      _lastAutoSourceCityState = [i.sourceCity, i.sourceState].where((s) => s.isNotEmpty).join(', ');
+      _lastAutoDestCityState = [i.destCity, i.destState].where((s) => s.isNotEmpty).join(', ');
       
       _transChargeCtrl.text = i.transportationCharge.toString();
       _remarksCtrl.text = i.remarks;
@@ -909,6 +972,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       controller: _sourceCityCtrl,
       label: 'Source City *',
       hint: 'e.g. Mumbai',
+      onChanged: (_) => _syncSourceDetailedAddress(),
       validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
     );
 
@@ -916,6 +980,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       controller: _sourceStateCtrl,
       label: 'Source State *',
       hint: 'e.g. Maharashtra',
+      onChanged: (_) => _syncSourceDetailedAddress(),
       validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
     );
 
@@ -933,6 +998,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       controller: _destCityCtrl,
       label: 'Dest. City *',
       hint: 'e.g. Delhi',
+      onChanged: (_) => _syncDestDetailedAddress(),
       validator: (val) => val == null || val.trim().isEmpty ? 'City is required' : null,
     );
 
@@ -940,6 +1006,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
       controller: _destStateCtrl,
       label: 'Dest. State *',
       hint: 'e.g. Delhi',
+      onChanged: (_) => _syncDestDetailedAddress(),
       validator: (val) => val == null || val.trim().isEmpty ? 'State is required' : null,
     );
 
@@ -1240,6 +1307,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
           controller: _sourceAddressCtrl,
           label: 'Source Detailed Address / Street (Optional)',
           hint: 'Enter building, street, or landmark if needed',
+          maxLines: 2,
         ),
         const SizedBox(height: 24),
         isMobile
@@ -1299,6 +1367,7 @@ class _InvoiceFormScreenState extends ConsumerState<InvoiceFormScreen> {
           controller: _destAddressCtrl,
           label: 'Dest. Detailed Address / Street (Optional)',
           hint: 'Enter building, street, or landmark if needed',
+          maxLines: 2,
         ),
         const SizedBox(height: 32),
 
