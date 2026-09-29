@@ -223,11 +223,27 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    if (!user.isVerified) {
+    if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Please verify your email address before logging in.',
+        message: 'Your account has been deactivated. Please contact support.',
       });
+    }
+
+    if (!user.isVerified) {
+      if (!user.verificationToken) {
+        // Legacy user created before email verification was introduced - auto-verify
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isVerified: true, isActive: true },
+        });
+        user.isVerified = true;
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Please verify your email address before logging in.',
+        });
+      }
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -266,8 +282,8 @@ exports.login = async (req, res, next) => {
  */
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+    const user = await prisma.user.findFirst({
+      where: { id: req.user.id, isActive: true },
       select: {
         id: true,
         email: true,
@@ -281,7 +297,7 @@ exports.getMe = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: 'User not found or account deactivated',
       });
     }
 
@@ -358,7 +374,7 @@ exports.logout = async (req, res, next) => {
     if (refreshToken) {
       await prisma.session.updateMany({
         where: { refreshToken },
-        data: { isValid: false },
+        data: { isValid: false, isActive: false },
       });
     }
 
@@ -366,13 +382,53 @@ exports.logout = async (req, res, next) => {
     if (req.user && req.user.id) {
       await prisma.session.updateMany({
         where: { userId: req.user.id },
-        data: { isValid: false },
+        data: { isValid: false, isActive: false },
       });
     }
 
     return res.status(200).json({
       success: true,
       message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @route   DELETE /api/v1/auth/me
+ * @desc    Deactivate user account (soft delete)
+ * @access  Private
+ */
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, isActive: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Soft delete user and invalidate sessions
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: false },
+    });
+
+    await prisma.session.updateMany({
+      where: { userId },
+      data: { isValid: false, isActive: false },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Account deactivated successfully',
     });
   } catch (error) {
     next(error);
@@ -402,7 +458,7 @@ exports.recreateSession = async (req, res, next) => {
     });
 
     // 2. Validate session
-    if (!session || !session.isValid) {
+    if (!session || !session.isValid || !session.isActive || !session.user || !session.user.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Invalid or revoked session. Please log in again.',
@@ -413,7 +469,7 @@ exports.recreateSession = async (req, res, next) => {
     if (new Date() > session.expiresAt) {
       await prisma.session.update({
         where: { id: session.id },
-        data: { isValid: false },
+        data: { isValid: false, isActive: false },
       });
       return res.status(401).json({
         success: false,
@@ -443,7 +499,7 @@ exports.recreateSession = async (req, res, next) => {
     // 4. Invalidate old session and create a new one (Rotation)
     await prisma.session.update({
       where: { id: session.id },
-      data: { isValid: false },
+      data: { isValid: false, isActive: false },
     });
 
     await prisma.session.create({
@@ -453,6 +509,8 @@ exports.recreateSession = async (req, res, next) => {
         deviceInfo: req.headers['user-agent'] || 'Unknown Device',
         ipAddress: req.ip || req.connection.remoteAddress || '0.0.0.0',
         expiresAt: newExpiresAt,
+        isValid: true,
+        isActive: true,
       },
     });
 

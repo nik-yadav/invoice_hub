@@ -43,6 +43,10 @@ const Profile = sequelize.define('Profile', {
     type: DataTypes.STRING,
     defaultValue: 'Enterprise Pro',
   },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
 }, {
   timestamps: true,
 });

@@ -12,5 +12,7 @@ router.post('/reset-password', authController.resetPassword);
 router.post('/logout', authMiddleware, authController.logout);
 router.get('/verify', authController.verifyEmail);
 router.post('/resend-verification', authController.resendVerification);
+router.delete('/me', authMiddleware, authController.deleteAccount);
+router.delete('/account', authMiddleware, authController.deleteAccount);
 
 module.exports = router;

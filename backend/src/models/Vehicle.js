@@ -40,6 +40,10 @@ const Vehicle = sequelize.define('Vehicle', {
     type: DataTypes.ENUM('available', 'busy', 'maintenance'),
     defaultValue: 'available',
   },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
 }, {
   timestamps: true,
 });

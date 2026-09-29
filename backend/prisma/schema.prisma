@@ -18,6 +18,7 @@ model User {
   isVerified        Boolean    @default(false)
   verificationToken String?    @unique
   tokenExpiresAt    DateTime?
+  isActive          Boolean    @default(true)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   customers         Customer[]
@@ -35,6 +36,7 @@ model Session {
   deviceInfo   String?
   ipAddress    String?
   isValid      Boolean  @default(true)
+  isActive     Boolean  @default(true)
   expiresAt    DateTime
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -53,6 +55,7 @@ model Profile {
   transportLicense          String   @default("")
   subscriptionPlan          String   @default("Standard Plan")
   enablePostOfficeSelection Boolean  @default(false)
+  isActive                  Boolean  @default(true)
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
   user                      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -76,6 +79,7 @@ model Firm {
   showPhoneOnInvoice Boolean   @default(true)
   showGstinOnInvoice Boolean   @default(true)
   showEmailOnInvoice Boolean   @default(true)
+  isActive           Boolean   @default(true)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   userId             String?
@@ -92,6 +96,7 @@ model Customer {
   city         String?
   state        String?
   pin          String?
+  isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   userId       String?
@@ -109,6 +114,7 @@ model Vehicle {
   insuranceNumber String?
   fitnessExpiry   String?
   status          String    @default("available")
+  isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   userId          String?
@@ -143,6 +149,7 @@ model Invoice {
   paymentMethod        String    @default("cash")
   paymentStatus        String    @default("pending")
   remarks              String?
+  isActive             Boolean   @default(true)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   userId               String?

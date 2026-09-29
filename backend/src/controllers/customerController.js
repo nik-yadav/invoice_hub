@@ -7,7 +7,11 @@ exports.getAllCustomers = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { search } = req.query;
-    let where = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    let where = {
+      ...userFilter,
+      isActive: true,
+    };
 
     if (search) {
       where = {
@@ -15,9 +19,9 @@ exports.getAllCustomers = async (req, res, next) => {
           where,
           {
             OR: [
-              { customerName: { contains: search } },
-              { phone: { contains: search } },
-              { city: { contains: search } },
+              { customerName: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+              { city: { contains: search, mode: 'insensitive' } },
             ],
           },
         ],
@@ -41,7 +45,9 @@ exports.getAllCustomers = async (req, res, next) => {
 exports.getCustomerById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const customer = await prisma.customer.findUnique({ where: { id } });
+    const customer = await prisma.customer.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!customer) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
@@ -76,6 +82,7 @@ exports.createCustomer = async (req, res, next) => {
         city: city || '',
         state: state || '',
         pin: pin || '',
+        isActive: true,
       },
     });
 
@@ -95,7 +102,9 @@ exports.createCustomer = async (req, res, next) => {
 exports.updateCustomer = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.customer.findUnique({ where: { id } });
+    const existing = await prisma.customer.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
@@ -122,13 +131,18 @@ exports.updateCustomer = async (req, res, next) => {
 exports.deleteCustomer = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.customer.findUnique({ where: { id } });
+    const existing = await prisma.customer.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
 
-    await prisma.customer.delete({ where: { id } });
+    await prisma.customer.update({
+      where: { id },
+      data: { isActive: false },
+    });
 
     return res.status(200).json({ success: true, message: 'Customer deleted successfully' });
   } catch (error) {

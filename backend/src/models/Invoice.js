@@ -69,6 +69,10 @@ const Invoice = sequelize.define('Invoice', {
     defaultValue: 'pending',
   },
   remarks: DataTypes.TEXT,
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
 }, {
   timestamps: true,
 });

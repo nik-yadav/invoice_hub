@@ -10,7 +10,7 @@ exports.getProfile = async (req, res, next) => {
     let profile = null;
 
     if (userId) {
-      profile = await prisma.profile.findUnique({ where: { userId } });
+      profile = await prisma.profile.findFirst({ where: { userId, isActive: true } });
     }
 
     if (!profile) {
@@ -26,6 +26,7 @@ exports.getProfile = async (req, res, next) => {
           address: '',
           transportLicense: '',
           subscriptionPlan: 'Standard Plan',
+          isActive: true,
         },
       });
     }
@@ -56,7 +57,7 @@ exports.getProfile = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    let profile = userId ? await prisma.profile.findUnique({ where: { userId } }) : null;
+    let profile = userId ? await prisma.profile.findFirst({ where: { userId, isActive: true } }) : null;
 
     const {
       full_name,
@@ -86,7 +87,7 @@ exports.updateProfile = async (req, res, next) => {
 
     if (!profile) {
       profile = await prisma.profile.create({
-        data: { userId, ...payload },
+        data: { userId, isActive: true, ...payload },
       });
     } else {
       profile = await prisma.profile.update({
@@ -110,6 +111,33 @@ exports.updateProfile = async (req, res, next) => {
         enable_post_office_selection: profile.enablePostOfficeSelection,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * DELETE /api/v1/profile
+ * Soft delete authenticated user's business profile
+ */
+exports.deleteProfile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const profile = await prisma.profile.findFirst({ where: { userId, isActive: true } });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    await prisma.profile.update({
+      where: { id: profile.id },
+      data: { isActive: false },
+    });
+
+    return res.status(200).json({ success: true, message: 'Profile deleted successfully' });
   } catch (error) {
     next(error);
   }

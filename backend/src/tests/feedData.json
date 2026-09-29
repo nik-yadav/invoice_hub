@@ -59,9 +59,9 @@
       "fullName": "Anil Yadav",
       "companyName": "Bharat Cargo Movers",
       "phone": "+91 9193349856",
-      "isVerified": false,
-      "verificationToken": "554aab42-24d7-48fc-99d9-ce0694077120",
-      "tokenExpiresAt": "2026-09-28T10:00:00.000Z",
+      "isVerified": true,
+      "verificationToken": null,
+      "tokenExpiresAt": null,
       "createdAt": "2025-10-23T10:00:00.000Z",
       "updatedAt": "2025-11-10T10:00:00.000Z"
     }

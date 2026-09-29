@@ -59,6 +59,10 @@ const Firm = sequelize.define('Firm', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
 }, {
   timestamps: true,
 });

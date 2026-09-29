@@ -190,6 +190,8 @@ async function runTests() {
       email: 'unverified@gmail.com',
       password: 'hashed-password',
       isVerified: false,
+      verificationToken: 'some-token',
+      isActive: true,
     };
   };
 

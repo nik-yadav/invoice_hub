@@ -6,7 +6,8 @@ const { prisma } = require('../config/prisma');
 exports.getMetrics = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const where = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const where = { ...userFilter, isActive: true };
 
     const totalInvoices = await prisma.invoice.count({ where });
     const totalCustomers = await prisma.customer.count({ where });
@@ -47,7 +48,8 @@ exports.getMetrics = async (req, res, next) => {
 exports.getRecentInvoices = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const where = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const where = { ...userFilter, isActive: true };
 
     const recentInvoices = await prisma.invoice.findMany({
       where,

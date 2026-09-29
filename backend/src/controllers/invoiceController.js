@@ -7,7 +7,11 @@ exports.getAllInvoices = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { status, customerId, firmId, search } = req.query;
-    const where = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const where = {
+      ...userFilter,
+      isActive: true,
+    };
 
     if (status) {
       where.paymentStatus = status.toLowerCase();
@@ -20,13 +24,13 @@ exports.getAllInvoices = async (req, res, next) => {
     }
     if (search) {
       where.AND = [
-        where,
+        { ...where },
         {
           OR: [
-            { invoiceNumber: { contains: search } },
-            { sourceCity: { contains: search } },
-            { destCity: { contains: search } },
-            { materialDescription: { contains: search } },
+            { invoiceNumber: { contains: search, mode: 'insensitive' } },
+            { sourceCity: { contains: search, mode: 'insensitive' } },
+            { destCity: { contains: search, mode: 'insensitive' } },
+            { materialDescription: { contains: search, mode: 'insensitive' } },
           ],
         },
       ];
@@ -60,8 +64,8 @@ exports.getAllInvoices = async (req, res, next) => {
 exports.getInvoiceById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const invoice = await prisma.invoice.findUnique({
-      where: { id },
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, isActive: true },
       include: {
         firm: true,
         customer: true,
@@ -149,6 +153,7 @@ exports.createInvoice = async (req, res, next) => {
         paymentMethod: paymentMethod || 'cash',
         paymentStatus: paymentStatus || 'pending',
         remarks: remarks || '',
+        isActive: true,
       },
     });
 
@@ -172,7 +177,9 @@ exports.createInvoice = async (req, res, next) => {
 exports.updateInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.invoice.findUnique({ where: { id } });
+    const existing = await prisma.invoice.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
@@ -211,13 +218,18 @@ exports.updateInvoice = async (req, res, next) => {
 exports.deleteInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.invoice.findUnique({ where: { id } });
+    const existing = await prisma.invoice.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
     }
 
-    await prisma.invoice.delete({ where: { id } });
+    await prisma.invoice.update({
+      where: { id },
+      data: { isActive: false },
+    });
 
     return res.status(200).json({ success: true, message: 'Invoice deleted successfully' });
   } catch (error) {
@@ -231,7 +243,9 @@ exports.deleteInvoice = async (req, res, next) => {
 exports.getInvoiceSummary = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const invoice = await prisma.invoice.findUnique({ where: { id } });
+    const invoice = await prisma.invoice.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!invoice) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });

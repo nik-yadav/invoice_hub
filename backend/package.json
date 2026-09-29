@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "test": "node src/tests/testEmailValidation.js && node src/tests/testSoftDelete.js",
+    "seed": "node -e \"require('./src/tests/feedData')()\"",
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push"
   },

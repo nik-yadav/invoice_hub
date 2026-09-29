@@ -6,7 +6,11 @@ const { prisma } = require('../config/prisma');
 exports.getAllFirms = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const where = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
+    const where = {
+      ...userFilter,
+      isActive: true,
+    };
 
     const firms = await prisma.firm.findMany({
       where,
@@ -24,7 +28,9 @@ exports.getAllFirms = async (req, res, next) => {
 exports.getFirmById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const firm = await prisma.firm.findUnique({ where: { id } });
+    const firm = await prisma.firm.findFirst({
+      where: { id, isActive: true },
+    });
 
     if (!firm) {
       return res.status(404).json({ success: false, message: 'Firm not found' });
@@ -117,7 +123,7 @@ exports.createFirm = async (req, res, next) => {
 exports.updateFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.firm.findUnique({ where: { id } });
+    const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Firm not found' });
@@ -209,7 +215,7 @@ exports.setDefaultFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
-    const existing = await prisma.firm.findUnique({ where: { id } });
+    const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Firm not found' });
@@ -240,13 +246,16 @@ exports.setDefaultFirm = async (req, res, next) => {
 exports.deleteFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.firm.findUnique({ where: { id } });
+    const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Firm not found' });
     }
 
-    await prisma.firm.delete({ where: { id } });
+    await prisma.firm.update({
+      where: { id },
+      data: { isActive: false },
+    });
 
     return res.status(200).json({ success: true, message: 'Firm deleted successfully' });
   } catch (error) {
