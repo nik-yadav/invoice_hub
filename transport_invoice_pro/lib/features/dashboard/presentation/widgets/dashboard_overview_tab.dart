@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 
+import '../../../../app/app_env.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/ui_constants.dart';
@@ -125,7 +126,42 @@ class DashboardOverviewTab extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(profile.companyName.isNotEmpty ? profile.companyName : AppConstants.appName),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                profile.companyName.isNotEmpty ? profile.companyName : AppConstants.appName,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (!AppEnv.isProduction) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: AppEnv.isStaging
+                      ? Colors.purple.withOpacity(0.12)
+                      : Colors.orange.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppEnv.isStaging ? Colors.purple : Colors.orange,
+                    width: 1.2,
+                  ),
+                ),
+                child: Text(
+                  AppEnv.environmentBadge,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: AppEnv.isStaging ? Colors.purple.shade700 : Colors.orange.shade800,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none_rounded),

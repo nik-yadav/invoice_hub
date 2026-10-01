@@ -1,8 +1,10 @@
+import '../../app/app_env.dart';
+
 /// Global application constants.
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'Transport Invoice Pro';
+  static String get appName => AppEnv.appName;
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
   

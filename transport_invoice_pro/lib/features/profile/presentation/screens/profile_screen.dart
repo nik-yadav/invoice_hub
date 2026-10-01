@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/app_env.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/ui_constants.dart';
@@ -576,6 +577,12 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.cloud_done_outlined,
                         title: 'API Backend Engine',
                         value: 'Node.js Express & Prisma ORM Active',
+                      ),
+                      _buildInfoTile(
+                        context,
+                        icon: Icons.alt_route_rounded,
+                        title: 'Environment Mode',
+                        value: '${AppEnv.environmentName} (${AppEnv.apiBaseUrl})',
                       ),
                       _buildInfoTile(
                         context,
