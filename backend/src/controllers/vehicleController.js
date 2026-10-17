@@ -1,9 +1,9 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/vehicles
  */
-exports.getAllVehicles = async (req, res, next) => {
+export const getAllVehicles = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { status } = req.query;
@@ -31,7 +31,7 @@ exports.getAllVehicles = async (req, res, next) => {
 /**
  * GET /api/v1/vehicles/:id
  */
-exports.getVehicleById = async (req, res, next) => {
+export const getVehicleById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const vehicle = await prisma.vehicle.findFirst({
@@ -51,7 +51,7 @@ exports.getVehicleById = async (req, res, next) => {
 /**
  * POST /api/v1/vehicles
  */
-exports.createVehicle = async (req, res, next) => {
+export const createVehicle = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const {
@@ -97,7 +97,7 @@ exports.createVehicle = async (req, res, next) => {
 /**
  * PUT /api/v1/vehicles/:id
  */
-exports.updateVehicle = async (req, res, next) => {
+export const updateVehicle = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findFirst({
@@ -126,7 +126,7 @@ exports.updateVehicle = async (req, res, next) => {
 /**
  * PATCH /api/v1/vehicles/:id/status
  */
-exports.updateVehicleStatus = async (req, res, next) => {
+export const updateVehicleStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -160,7 +160,7 @@ exports.updateVehicleStatus = async (req, res, next) => {
 /**
  * DELETE /api/v1/vehicles/:id
  */
-exports.deleteVehicle = async (req, res, next) => {
+export const deleteVehicle = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findFirst({

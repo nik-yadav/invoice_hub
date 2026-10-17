@@ -1,5 +1,8 @@
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const CACHE_FILE_PATH = path.join(__dirname, 'disposable_domains_cache.json');
 const BLOCKLIST_URL = 'https://raw.githubusercontent.com/disposable-email-domains/disposable-email-domains/master/disposable_email_blocklist.conf';
@@ -113,7 +116,7 @@ function isDisposable(domain) {
   return disposableDomains.has(normalizedDomain);
 }
 
-module.exports = {
+export default {
   initBlocklist,
   refreshBlocklist,
   isDisposable,

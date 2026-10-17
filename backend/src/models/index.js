@@ -1,11 +1,12 @@
-let sequelize = require('../config/database');
-const { switchToSqlite } = require('../config/database');
-const User = require('./User');
-const Profile = require('./Profile');
-const Firm = require('./Firm');
-const Customer = require('./Customer');
-const Vehicle = require('./Vehicle');
-const Invoice = require('./Invoice');
+import defaultSequelize, { switchToSqlite } from '../config/database.js';
+
+let sequelize = defaultSequelize;
+import User from './User.js';
+import Profile from './Profile.js';
+import Firm from './Firm.js';
+import Customer from './Customer.js';
+import Vehicle from './Vehicle.js';
+import Invoice from './Invoice.js';
 
 // Define Model Associations
 User.hasOne(Profile, { foreignKey: 'userId', as: 'profile' });
@@ -131,7 +132,7 @@ const initDb = async () => {
   }
 };
 
-module.exports = {
+export default {
   sequelize,
   User,
   Profile,

@@ -1,9 +1,9 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/invoices
  */
-exports.getAllInvoices = async (req, res, next) => {
+export const getAllInvoices = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { status, customerId, firmId, search } = req.query;
@@ -61,7 +61,7 @@ exports.getAllInvoices = async (req, res, next) => {
 /**
  * GET /api/v1/invoices/:id
  */
-exports.getInvoiceById = async (req, res, next) => {
+export const getInvoiceById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const invoice = await prisma.invoice.findFirst({
@@ -92,7 +92,7 @@ exports.getInvoiceById = async (req, res, next) => {
 /**
  * POST /api/v1/invoices
  */
-exports.createInvoice = async (req, res, next) => {
+export const createInvoice = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const {
@@ -174,7 +174,7 @@ exports.createInvoice = async (req, res, next) => {
 /**
  * PUT /api/v1/invoices/:id
  */
-exports.updateInvoice = async (req, res, next) => {
+export const updateInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.invoice.findFirst({
@@ -215,7 +215,7 @@ exports.updateInvoice = async (req, res, next) => {
 /**
  * DELETE /api/v1/invoices/:id
  */
-exports.deleteInvoice = async (req, res, next) => {
+export const deleteInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.invoice.findFirst({
@@ -240,7 +240,7 @@ exports.deleteInvoice = async (req, res, next) => {
 /**
  * GET /api/v1/invoices/:id/summary
  */
-exports.getInvoiceSummary = async (req, res, next) => {
+export const getInvoiceSummary = async (req, res, next) => {
   try {
     const { id } = req.params;
     const invoice = await prisma.invoice.findFirst({

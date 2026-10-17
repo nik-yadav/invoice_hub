@@ -1,8 +1,9 @@
-const dnsService = require('../services/dnsService');
-const blocklistService = require('../services/blocklistService');
-const captchaService = require('../services/captchaService');
-const authController = require('../controllers/authController');
-const { prisma } = require('../config/prisma');
+import { fileURLToPath } from 'url';
+import dnsService from '../services/dnsService.js';
+import blocklistService from '../services/blocklistService.js';
+import captchaService from '../services/captchaService.js';
+import * as authController from '../controllers/authController.js';
+import { prisma } from '../config/prisma.js';
 
 // Mock response object helper
 const mockResponse = () => {
@@ -224,7 +225,7 @@ async function runTests() {
 }
 
 // Check if run directly
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // Mock checkMxRecords and fetch if they need network bypass for local offline tests
   runTests().catch(err => {
     console.error('Fatal test runner error:', err);
@@ -232,4 +233,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runTests };
+export { runTests };

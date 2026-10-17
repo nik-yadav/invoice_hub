@@ -1,10 +1,10 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/profile
  * Get authenticated user's business profile
  */
-exports.getProfile = async (req, res, next) => {
+export const getProfile = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     let profile = null;
@@ -54,7 +54,7 @@ exports.getProfile = async (req, res, next) => {
  * PUT /api/v1/profile
  * Update authenticated user's business profile
  */
-exports.updateProfile = async (req, res, next) => {
+export const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     let profile = userId ? await prisma.profile.findFirst({ where: { userId, isActive: true } }) : null;
@@ -120,7 +120,7 @@ exports.updateProfile = async (req, res, next) => {
  * DELETE /api/v1/profile
  * Soft delete authenticated user's business profile
  */
-exports.deleteProfile = async (req, res, next) => {
+export const deleteProfile = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {

@@ -1,23 +1,24 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-require('dotenv').config();
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
 
-const { initPrismaDb } = require('./src/config/prisma');
-const errorHandler = require('./src/middleware/errorHandler');
+import { initPrismaDb } from './src/config/prisma.js';
+import errorHandler from './src/middleware/errorHandler.js';
 
 // Import routes
-const authRoutes = require('./src/routes/authRoutes');
-const profileRoutes = require('./src/routes/profileRoutes');
-const firmRoutes = require('./src/routes/firmRoutes');
-const customerRoutes = require('./src/routes/customerRoutes');
-const vehicleRoutes = require('./src/routes/vehicleRoutes');
-const invoiceRoutes = require('./src/routes/invoiceRoutes');
-const dashboardRoutes = require('./src/routes/dashboardRoutes');
-const uploadRoutes = require('./src/routes/uploadRoutes');
+import authRoutes from './src/routes/authRoutes.js';
+import profileRoutes from './src/routes/profileRoutes.js';
+import firmRoutes from './src/routes/firmRoutes.js';
+import customerRoutes from './src/routes/customerRoutes.js';
+import vehicleRoutes from './src/routes/vehicleRoutes.js';
+import invoiceRoutes from './src/routes/invoiceRoutes.js';
+import dashboardRoutes from './src/routes/dashboardRoutes.js';
+import uploadRoutes from './src/routes/uploadRoutes.js';
 
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import blocklistService from './src/services/blocklistService.js';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET)) {
   console.error('FATAL ERROR: JWT_SECRET must be set to a secure custom value in production.');
@@ -156,8 +157,7 @@ app.listen(PORT, async () => {
   await initPrismaDb();
 
   // Initialize disposable email blocklist (remote fetch + local cache + weekly update schedule)
-  const { initBlocklist } = require('./src/services/blocklistService');
-  await initBlocklist();
+  await blocklistService.initBlocklist();
 });
 
-module.exports = app;
+export default app;

@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import * as authController from '../controllers/authController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+import { optionalAuthMiddleware } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
-const { optionalAuthMiddleware } = require('../middleware/authMiddleware');
 
 router.post('/register', authController.register);
 router.post('/login', authController.login);
@@ -16,4 +17,4 @@ router.post('/resend-verification', authController.resendVerification);
 router.delete('/me', authMiddleware, authController.deleteAccount);
 router.delete('/account', authMiddleware, authController.deleteAccount);
 
-module.exports = router;
+export default router;

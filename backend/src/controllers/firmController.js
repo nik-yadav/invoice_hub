@@ -1,9 +1,9 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/firms
  */
-exports.getAllFirms = async (req, res, next) => {
+export const getAllFirms = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
@@ -25,7 +25,7 @@ exports.getAllFirms = async (req, res, next) => {
 /**
  * GET /api/v1/firms/:id
  */
-exports.getFirmById = async (req, res, next) => {
+export const getFirmById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const firm = await prisma.firm.findFirst({
@@ -45,7 +45,7 @@ exports.getFirmById = async (req, res, next) => {
 /**
  * POST /api/v1/firms
  */
-exports.createFirm = async (req, res, next) => {
+export const createFirm = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const {
@@ -120,7 +120,7 @@ exports.createFirm = async (req, res, next) => {
 /**
  * PUT /api/v1/firms/:id
  */
-exports.updateFirm = async (req, res, next) => {
+export const updateFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
@@ -211,7 +211,7 @@ exports.updateFirm = async (req, res, next) => {
 /**
  * PATCH /api/v1/firms/:id/set-default
  */
-exports.setDefaultFirm = async (req, res, next) => {
+export const setDefaultFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
@@ -243,7 +243,7 @@ exports.setDefaultFirm = async (req, res, next) => {
 /**
  * DELETE /api/v1/firms/:id
  */
-exports.deleteFirm = async (req, res, next) => {
+export const deleteFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });

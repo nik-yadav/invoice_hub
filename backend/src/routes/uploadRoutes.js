@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as uploadController from '../controllers/uploadController.js';
+
 const router = express.Router();
-const uploadController = require('../controllers/uploadController');
 
 router.post('/signature', uploadController.uploadSignature);
 
-module.exports = router;
+export default router;

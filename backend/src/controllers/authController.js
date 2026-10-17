@@ -1,12 +1,12 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const validator = require('validator');
-const { prisma } = require('../config/prisma');
-const dnsService = require('../services/dnsService');
-const blocklistService = require('../services/blocklistService');
-const mailService = require('../services/mailService');
-const captchaService = require('../services/captchaService');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import validator from 'validator';
+import { prisma } from '../config/prisma.js';
+import dnsService from '../services/dnsService.js';
+import blocklistService from '../services/blocklistService.js';
+import mailService from '../services/mailService.js';
+import captchaService from '../services/captchaService.js';
 
 // Helper to generate access + refresh tokens and create a DB session
 const generateTokensAndCreateSession = async (user, req) => {
@@ -49,7 +49,7 @@ const generateTokensAndCreateSession = async (user, req) => {
  * @desc    Register a new user using Prisma ORM
  * @access  Public
  */
-exports.register = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const { email, password, fullName, companyName, phone } = req.body;
     const ipAddress = req.ip || req.connection.remoteAddress || '0.0.0.0';
@@ -201,7 +201,7 @@ exports.register = async (req, res, next) => {
  * @desc    Authenticate user & get token using Prisma ORM
  * @access  Public
  */
-exports.login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -280,7 +280,7 @@ exports.login = async (req, res, next) => {
  * @desc    Get current user details
  * @access  Private
  */
-exports.getMe = async (req, res, next) => {
+export const getMe = async (req, res, next) => {
   try {
     const user = await prisma.user.findFirst({
       where: { id: req.user.id, isActive: true },
@@ -321,7 +321,7 @@ exports.getMe = async (req, res, next) => {
  * @route   POST /api/v1/auth/forgot-password
  * @access  Public
  */
-exports.forgotPassword = async (req, res, next) => {
+export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -344,7 +344,7 @@ exports.forgotPassword = async (req, res, next) => {
  * @route   POST /api/v1/auth/reset-password
  * @access  Public
  */
-exports.resetPassword = async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
     if (!newPassword) {
@@ -367,7 +367,7 @@ exports.resetPassword = async (req, res, next) => {
  * @route   POST /api/v1/auth/logout
  * @access  Private
  */
-exports.logout = async (req, res, next) => {
+export const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
     
@@ -400,7 +400,7 @@ exports.logout = async (req, res, next) => {
  * @desc    Deactivate user account (soft delete)
  * @access  Private
  */
-exports.deleteAccount = async (req, res, next) => {
+export const deleteAccount = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -440,7 +440,7 @@ exports.deleteAccount = async (req, res, next) => {
  * @desc    Recreate user session using a valid refresh token (Refresh Token Rotation)
  * @access  Public
  */
-exports.recreateSession = async (req, res, next) => {
+export const recreateSession = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
@@ -530,7 +530,7 @@ exports.recreateSession = async (req, res, next) => {
  * @desc    Verify email address using verification token
  * @access  Public
  */
-exports.verifyEmail = async (req, res, next) => {
+export const verifyEmail = async (req, res, next) => {
   try {
     const { token } = req.query;
 
@@ -591,7 +591,7 @@ exports.verifyEmail = async (req, res, next) => {
  * @desc    Resend email verification link
  * @access  Public
  */
-exports.resendVerification = async (req, res, next) => {
+export const resendVerification = async (req, res, next) => {
   try {
     const { email } = req.body;
 

@@ -1,10 +1,10 @@
-const { supabase } = require('../config/supabase');
+import { supabase } from '../config/supabase.js';
 
 /**
  * POST /api/v1/upload/signature
  * Upload firm signature (base64 image) to Supabase S3 storage bucket ('signatures')
  */
-exports.uploadSignature = async (req, res, next) => {
+export const uploadSignature = async (req, res, next) => {
   try {
     const { image, file_name } = req.body;
 

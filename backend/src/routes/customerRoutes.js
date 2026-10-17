@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as customerController from '../controllers/customerController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const customerController = require('../controllers/customerController');
-const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', authMiddleware, customerController.getAllCustomers);
 router.get('/:id', authMiddleware, customerController.getCustomerById);
@@ -9,4 +10,4 @@ router.post('/', authMiddleware, customerController.createCustomer);
 router.put('/:id', authMiddleware, customerController.updateCustomer);
 router.delete('/:id', authMiddleware, customerController.deleteCustomer);
 
-module.exports = router;
+export default router;
