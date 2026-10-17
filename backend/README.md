@@ -15,6 +15,7 @@
 - **Fleet Vehicle Tracking**: Vehicle status toggles (`available`, `busy`, `maintenance`).
 - **Invoice & Trip Billing Engine**: Dynamic freight invoice creation, breakdown, and summaries.
 - **Dashboard Analytics**: Revenue and active vehicle aggregations.
+- **API Keys**: CLI-issued, read-only keys scoped per user (see [API Keys](#-api-keys)).
 
 ---
 
@@ -42,6 +43,27 @@ npx prisma generate
 # Start Production API Server
 npm start
 ```
+
+---
+
+## 🔑 API Keys
+
+Read-only API keys (scope `invoices:read`) are issued from the command line. There is no UI for this.
+
+```bash
+# Create a key for a user (--name and --expires-days are optional)
+npm run apikey -- create user@example.com --name "Claude Desktop" --expires-days 90
+
+# List a user's keys (id, name, status, expiry, last used)
+npm run apikey -- list user@example.com
+
+# Revoke a key by id
+npm run apikey -- revoke <keyId>
+```
+
+- The full key (`ih_...`) is printed **once** at creation. Only its SHA-256 hash is stored, so a lost key cannot be recovered; revoke it and create a new one.
+- Revoking deactivates the key (`isActive = false`); it is not deleted.
+- Keys can only be issued to existing, active users.
 
 ---
 

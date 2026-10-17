@@ -27,6 +27,7 @@ model User {
   profile           Profile?
   vehicles          Vehicle[]
   sessions          Session[]
+  apiKeys           ApiKey[]
 }
 
 model Session {
@@ -165,4 +166,26 @@ model BlockedSignup {
   reason    String
   ipAddress String?
   createdAt DateTime @default(now())
+}
+
+enum AccessType {
+  READ_ONLY
+  READ_WRITE
+}
+
+model ApiKey {
+  id         String     @id @default(uuid())
+  keyHash    String     @unique
+  name       String?
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes     String[]   @default(["invoices:read"])
+  accessType AccessType @default(READ_ONLY)
+  isActive   Boolean    @default(true)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@map("api_keys")
 }
