@@ -5,10 +5,9 @@ import { prisma } from '../config/prisma.js';
  */
 export const getAllFirms = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
-    const where = {
-      ...userFilter,
+    const userId = req.user.id;
+        const where = {
+      userId,
       isActive: true,
     };
 
@@ -29,7 +28,7 @@ export const getFirmById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const firm = await prisma.firm.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!firm) {
@@ -47,7 +46,7 @@ export const getFirmById = async (req, res, next) => {
  */
 export const createFirm = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const {
       businessName,
       business_name,
@@ -84,7 +83,7 @@ export const createFirm = async (req, res, next) => {
 
     if (defaultFlag) {
       await prisma.firm.updateMany({
-        where: userId ? { userId } : {},
+        where: { userId },
         data: { isDefault: false },
       });
     }
@@ -123,7 +122,7 @@ export const createFirm = async (req, res, next) => {
 export const updateFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
+    const existing = await prisma.firm.findFirst({ where: { id, userId: req.user.id, isActive: true } });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Firm not found' });
@@ -214,15 +213,15 @@ export const updateFirm = async (req, res, next) => {
 export const setDefaultFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-    const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
+    const userId = req.user.id;
+    const existing = await prisma.firm.findFirst({ where: { id, userId, isActive: true } });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Firm not found' });
     }
 
     await prisma.firm.updateMany({
-      where: userId ? { userId } : {},
+      where: { userId },
       data: { isDefault: false },
     });
     const firm = await prisma.firm.update({
@@ -246,7 +245,7 @@ export const setDefaultFirm = async (req, res, next) => {
 export const deleteFirm = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.firm.findFirst({ where: { id, isActive: true } });
+    const existing = await prisma.firm.findFirst({ where: { id, userId: req.user.id, isActive: true } });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Firm not found' });

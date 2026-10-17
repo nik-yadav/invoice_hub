@@ -21,6 +21,9 @@ const mockResponse = () => {
   return res;
 };
 
+const OWNER_ID = 'user-owner';
+const OTHER_USER_ID = 'user-other';
+
 const mockNext = err => {
   if (err) console.error('Next middleware called with error:', err);
 };
@@ -47,7 +50,7 @@ async function runSoftDeleteTests() {
   const originalFirmUpdate = prisma.firm.update;
 
   prisma.firm.findFirst = async ({ where }) => {
-    if (where.id === 'firm-123' && where.isActive === true) {
+    if (where.id === 'firm-123' && where.userId === OWNER_ID && where.isActive === true) {
       return { id: 'firm-123', businessName: 'Test Firm', isActive: true };
     }
     return null;
@@ -57,7 +60,7 @@ async function runSoftDeleteTests() {
     return { id: where.id, ...data };
   };
 
-  const reqFirmDelete = { params: { id: 'firm-123' } };
+  const reqFirmDelete = { params: { id: 'firm-123' }, user: { id: OWNER_ID } };
   const resFirmDelete = mockResponse();
   await firmController.deleteFirm(reqFirmDelete, resFirmDelete, mockNext);
 
@@ -65,10 +68,14 @@ async function runSoftDeleteTests() {
   assert(firmUpdatedWith && firmUpdatedWith.data.isActive === false, 'Firm soft delete sets isActive: false');
 
   // Test already soft-deleted firm returns 404
-  const reqFirmDeleteAgain = { params: { id: 'firm-nonexistent' } };
+  const reqFirmDeleteAgain = { params: { id: 'firm-nonexistent' }, user: { id: OWNER_ID } };
   const resFirmDeleteAgain = mockResponse();
   await firmController.deleteFirm(reqFirmDeleteAgain, resFirmDeleteAgain, mockNext);
   assert(resFirmDeleteAgain.statusCode === 404, 'Soft-deleted / nonexistent firm delete returns 404');
+
+  const resOtherFirmDelete = mockResponse();
+  await firmController.deleteFirm({ params: { id: 'firm-123' }, user: { id: OTHER_USER_ID } }, resOtherFirmDelete, mockNext);
+  assert(resOtherFirmDelete.statusCode === 404, 'Another user cannot delete this firm (404)');
 
   // 2. Test Customer Soft Delete
   console.log('\n--- Testing Customer Soft Delete ---');
@@ -77,7 +84,7 @@ async function runSoftDeleteTests() {
   const originalCustomerUpdate = prisma.customer.update;
 
   prisma.customer.findFirst = async ({ where }) => {
-    if (where.id === 'cust-123' && where.isActive === true) {
+    if (where.id === 'cust-123' && where.userId === OWNER_ID && where.isActive === true) {
       return { id: 'cust-123', customerName: 'Test Customer', isActive: true };
     }
     return null;
@@ -87,12 +94,16 @@ async function runSoftDeleteTests() {
     return { id: where.id, ...data };
   };
 
-  const reqCustDelete = { params: { id: 'cust-123' } };
+  const reqCustDelete = { params: { id: 'cust-123' }, user: { id: OWNER_ID } };
   const resCustDelete = mockResponse();
   await customerController.deleteCustomer(reqCustDelete, resCustDelete, mockNext);
 
   assert(resCustDelete.statusCode === 200, 'Delete customer returns 200 OK');
   assert(customerUpdatedWith && customerUpdatedWith.data.isActive === false, 'Customer soft delete sets isActive: false');
+
+  const resOtherCustomerDelete = mockResponse();
+  await customerController.deleteCustomer({ params: { id: 'cust-123' }, user: { id: OTHER_USER_ID } }, resOtherCustomerDelete, mockNext);
+  assert(resOtherCustomerDelete.statusCode === 404, 'Another user cannot delete this customer (404)');
 
   // 3. Test Vehicle Soft Delete
   console.log('\n--- Testing Vehicle Soft Delete ---');
@@ -101,7 +112,7 @@ async function runSoftDeleteTests() {
   const originalVehicleUpdate = prisma.vehicle.update;
 
   prisma.vehicle.findFirst = async ({ where }) => {
-    if (where.id === 'veh-123' && where.isActive === true) {
+    if (where.id === 'veh-123' && where.userId === OWNER_ID && where.isActive === true) {
       return { id: 'veh-123', vehicleNumber: 'MH12AB1234', isActive: true };
     }
     return null;
@@ -111,12 +122,16 @@ async function runSoftDeleteTests() {
     return { id: where.id, ...data };
   };
 
-  const reqVehDelete = { params: { id: 'veh-123' } };
+  const reqVehDelete = { params: { id: 'veh-123' }, user: { id: OWNER_ID } };
   const resVehDelete = mockResponse();
   await vehicleController.deleteVehicle(reqVehDelete, resVehDelete, mockNext);
 
   assert(resVehDelete.statusCode === 200, 'Delete vehicle returns 200 OK');
   assert(vehicleUpdatedWith && vehicleUpdatedWith.data.isActive === false, 'Vehicle soft delete sets isActive: false');
+
+  const resOtherVehicleDelete = mockResponse();
+  await vehicleController.deleteVehicle({ params: { id: 'veh-123' }, user: { id: OTHER_USER_ID } }, resOtherVehicleDelete, mockNext);
+  assert(resOtherVehicleDelete.statusCode === 404, 'Another user cannot delete this vehicle (404)');
 
   // 4. Test Invoice Soft Delete
   console.log('\n--- Testing Invoice Soft Delete ---');
@@ -125,7 +140,7 @@ async function runSoftDeleteTests() {
   const originalInvoiceUpdate = prisma.invoice.update;
 
   prisma.invoice.findFirst = async ({ where }) => {
-    if (where.id === 'inv-123' && where.isActive === true) {
+    if (where.id === 'inv-123' && where.userId === OWNER_ID && where.isActive === true) {
       return { id: 'inv-123', invoiceNumber: 'INV-001', isActive: true };
     }
     return null;
@@ -135,12 +150,16 @@ async function runSoftDeleteTests() {
     return { id: where.id, ...data };
   };
 
-  const reqInvDelete = { params: { id: 'inv-123' } };
+  const reqInvDelete = { params: { id: 'inv-123' }, user: { id: OWNER_ID } };
   const resInvDelete = mockResponse();
   await invoiceController.deleteInvoice(reqInvDelete, resInvDelete, mockNext);
 
   assert(resInvDelete.statusCode === 200, 'Delete invoice returns 200 OK');
   assert(invoiceUpdatedWith && invoiceUpdatedWith.data.isActive === false, 'Invoice soft delete sets isActive: false');
+
+  const resOtherInvoiceDelete = mockResponse();
+  await invoiceController.deleteInvoice({ params: { id: 'inv-123' }, user: { id: OTHER_USER_ID } }, resOtherInvoiceDelete, mockNext);
+  assert(resOtherInvoiceDelete.statusCode === 404, 'Another user cannot delete this invoice (404)');
 
   // 5. Test Inactive User Login Block
   console.log('\n--- Testing Inactive User Login Block ---');

@@ -1,15 +1,17 @@
 import { prisma } from '../config/prisma.js';
+import { pickFields } from '../utils/pickFields.js';
+
+const UPDATABLE_FIELDS = ['customerName', 'phone', 'gstin', 'address', 'city', 'state', 'pin'];
 
 /**
  * GET /api/v1/customers
  */
 export const getAllCustomers = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const { search } = req.query;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
-    let where = {
-      ...userFilter,
+        let where = {
+      userId,
       isActive: true,
     };
 
@@ -46,7 +48,7 @@ export const getCustomerById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const customer = await prisma.customer.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!customer) {
@@ -64,7 +66,7 @@ export const getCustomerById = async (req, res, next) => {
  */
 export const createCustomer = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const { customerName, customer_name, phone, gstin, address, city, state, pin } = req.body;
     const cName = customerName || customer_name;
 
@@ -103,16 +105,21 @@ export const updateCustomer = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.customer.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
 
+    const data = pickFields(req.body, UPDATABLE_FIELDS);
+    if (req.body.customerName === undefined && req.body.customer_name !== undefined) {
+      data.customerName = req.body.customer_name;
+    }
+
     const customer = await prisma.customer.update({
       where: { id },
-      data: req.body,
+      data,
     });
 
     return res.status(200).json({
@@ -132,7 +139,7 @@ export const deleteCustomer = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.customer.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {

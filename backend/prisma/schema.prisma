@@ -46,7 +46,7 @@ model Session {
 
 model Profile {
   id                        String   @id @default(uuid())
-  userId                    String?  @unique
+  userId                    String  @unique
   fullName                  String   @default("")
   companyName               String   @default("")
   email                     String   @default("")
@@ -59,7 +59,7 @@ model Profile {
   isActive                  Boolean  @default(true)
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
-  user                      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Firm {
@@ -83,8 +83,8 @@ model Firm {
   isActive           Boolean   @default(true)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  userId             String?
-  user               User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices           Invoice[]
 }
 
@@ -100,8 +100,8 @@ model Customer {
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  userId       String?
-  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices     Invoice[]
 }
 
@@ -118,9 +118,9 @@ model Vehicle {
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  userId          String?
+  userId          String
   invoices        Invoice[]
-  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {
@@ -153,10 +153,10 @@ model Invoice {
   isActive             Boolean   @default(true)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
-  userId               String?
+  userId               String
   customer             Customer? @relation(fields: [customerId], references: [id])
   firm                 Firm?     @relation(fields: [firmId], references: [id])
-  user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle              Vehicle?  @relation(fields: [vehicleId], references: [id])
 }
 
@@ -188,4 +188,23 @@ model ApiKey {
   updatedAt  DateTime   @updatedAt
 
   @@map("api_keys")
+}
+
+// No foreign keys on purpose: audit rows must outlive deleted keys and users.
+model ApiAuditLog {
+  id         String   @id @default(uuid())
+  apiKeyId   String?
+  userId     String?
+  method     String
+  path       String
+  query      Json?
+  statusCode Int
+  ip         String?
+  userAgent  String?
+  durationMs Int
+  createdAt  DateTime @default(now())
+
+  @@index([apiKeyId, createdAt])
+  @@index([userId, createdAt])
+  @@map("api_audit_logs")
 }
