@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/ui_constants.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../core/services/user_session.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
 
@@ -29,7 +30,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
 
     if (UserSession.isLoggedIn) {
-      context.goNamed(RouteNames.dashboard);
+      // If the JWT access token is expired (e.g. after several days),
+      // proactively attempt to refresh the session using the refresh token before navigating to dashboard.
+      if (UserSession.isTokenExpired) {
+        final refreshed = await ApiService.recreateSession();
+        if (!refreshed) {
+          await UserSession.clearSession();
+          if (mounted) {
+            context.goNamed(RouteNames.login);
+          }
+          return;
+        }
+      }
+
+      if (mounted) {
+        context.goNamed(RouteNames.dashboard);
+      }
     } else {
       context.goNamed(RouteNames.login);
     }

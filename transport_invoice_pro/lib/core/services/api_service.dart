@@ -30,18 +30,18 @@ class ApiService {
   }
 
   static bool _isRefreshing = false;
-  static final List<Completer<void>> _refreshQueue = [];
+  static final List<Completer<bool>> _refreshQueue = [];
 
   /// Renew expired user session transparently using Refresh Token Rotation.
-  static Future<bool> _recreateSession() async {
+  static Future<bool> recreateSession() async {
     if (_isRefreshing) {
-      final completer = Completer<void>();
+      final completer = Completer<bool>();
       _refreshQueue.add(completer);
-      await completer.future;
-      return UserSession.token != null;
+      return completer.future;
     }
 
     _isRefreshing = true;
+    bool success = false;
     try {
       final refreshTok = UserSession.refreshToken;
       if (refreshTok == null || refreshTok.isEmpty) {
@@ -63,20 +63,20 @@ class ApiService {
         final newToken = body['token'] as String;
         final newRefreshToken = body['refreshToken'] as String;
         await UserSession.updateTokens(newToken, newRefreshToken);
-        return true;
+        success = true;
       }
     } catch (e) {
-      if (kDebugMode) print('[ApiService _recreateSession Error]: $e');
+      if (kDebugMode) print('[ApiService recreateSession Error]: $e');
     } finally {
       _isRefreshing = false;
       for (final completer in _refreshQueue) {
         if (!completer.isCompleted) {
-          completer.complete();
+          completer.complete(success);
         }
       }
       _refreshQueue.clear();
     }
-    return false;
+    return success;
   }
 
   /// Request execution wrapper with auto-retry on 401 Unauthorized and network error sanitization.
@@ -90,11 +90,11 @@ class ApiService {
     } catch (e) {
       // 1. Transparent token refresh on 401 Unauthorized
       if (e is ApiException && e.statusCode == 401 && retryCount < 1) {
-        final refreshSuccess = await _recreateSession();
+        final refreshSuccess = await recreateSession();
         if (refreshSuccess) {
           return _request(requestFn, retryCount: 1);
         } else {
-          await UserSession.clearSession();
+          await UserSession.handleSessionExpired();
         }
       }
 

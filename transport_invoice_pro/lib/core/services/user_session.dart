@@ -51,6 +51,35 @@ class UserSession {
   /// Whether user is currently authenticated.
   static bool get isLoggedIn => _token != null && _token!.isNotEmpty && _currentUser != null;
 
+  /// Check whether the active JWT access token is expired or close to expiring (within 60s).
+  static bool get isTokenExpired {
+    if (_token == null || _token!.isEmpty) return true;
+    try {
+      final parts = _token!.split('.');
+      if (parts.length != 3) return true;
+      final normalized = base64Url.normalize(parts[1]);
+      final payload = jsonDecode(utf8.decode(base64Url.decode(normalized)));
+      if (payload is Map && payload.containsKey('exp')) {
+        final exp = payload['exp'] as int;
+        final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+        return DateTime.now().isAfter(expiry.subtract(const Duration(seconds: 60)));
+      }
+    } catch (_) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Stream listening for when a session expires and cannot be refreshed.
+  static final StreamController<void> _sessionExpiredController = StreamController<void>.broadcast();
+  static Stream<void> get onSessionExpired => _sessionExpiredController.stream;
+
+  /// Handle session expiration by clearing data and broadcasting event to UI/router.
+  static Future<void> handleSessionExpired() async {
+    await clearSession();
+    _sessionExpiredController.add(null);
+  }
+
   /// Update tokens in storage (used on dynamic recreate-session).
   static Future<void> updateTokens(String token, String refreshToken) async {
     _token = token;
