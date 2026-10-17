@@ -15,6 +15,7 @@ import vehicleRoutes from './src/routes/vehicleRoutes.js';
 import invoiceRoutes from './src/routes/invoiceRoutes.js';
 import dashboardRoutes from './src/routes/dashboardRoutes.js';
 import uploadRoutes from './src/routes/uploadRoutes.js';
+import integrationRoutes from './src/routes/integrationRoutes.js';
 
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -134,6 +135,7 @@ app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/integrations', integrationRoutes);
 
 // 404 Route Handler
 app.use('*', (req, res) => {

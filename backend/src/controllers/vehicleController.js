@@ -1,15 +1,26 @@
 import { prisma } from '../config/prisma.js';
+import { pickFields } from '../utils/pickFields.js';
+
+const UPDATABLE_FIELDS = [
+  'vehicleNumber',
+  'type',
+  'capacity',
+  'driverName',
+  'driverPhone',
+  'insuranceNumber',
+  'fitnessExpiry',
+  'status',
+];
 
 /**
  * GET /api/v1/vehicles
  */
 export const getAllVehicles = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const { status } = req.query;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
-    const where = {
-      ...userFilter,
+        const where = {
+      userId,
       isActive: true,
     };
 
@@ -35,7 +46,7 @@ export const getVehicleById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const vehicle = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!vehicle) {
@@ -53,7 +64,7 @@ export const getVehicleById = async (req, res, next) => {
  */
 export const createVehicle = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const {
       vehicleNumber,
       type,
@@ -101,7 +112,7 @@ export const updateVehicle = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {
@@ -110,7 +121,7 @@ export const updateVehicle = async (req, res, next) => {
 
     const vehicle = await prisma.vehicle.update({
       where: { id },
-      data: req.body,
+      data: pickFields(req.body, UPDATABLE_FIELDS),
     });
 
     return res.status(200).json({
@@ -136,7 +147,7 @@ export const updateVehicleStatus = async (req, res, next) => {
     }
 
     const existing = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Vehicle not found' });
@@ -164,7 +175,7 @@ export const deleteVehicle = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {

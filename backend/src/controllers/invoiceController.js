@@ -1,15 +1,60 @@
 import { prisma } from '../config/prisma.js';
+import { pickFields } from '../utils/pickFields.js';
+
+const UPDATABLE_FIELDS = [
+  'invoiceNumber',
+  'invoiceDate',
+  'tripDate',
+  'firmId',
+  'customerId',
+  'vehicleId',
+  'sourcePin',
+  'sourceCity',
+  'sourceDistrict',
+  'sourceState',
+  'sourceAddress',
+  'destinationPin',
+  'destCity',
+  'destDistrict',
+  'destState',
+  'destAddress',
+  'materialDescription',
+  'weight',
+  'transportationCharge',
+  'customPartiesFields',
+  'customChargesFields',
+  'totalAmount',
+  'paymentMethod',
+  'paymentStatus',
+  'remarks',
+];
+
+// Linked firm/customer/vehicle must belong to the same user, otherwise reading the
+// invoice back would expose another user's records. Returns the first offending field.
+const findForeignReference = async (userId, { firmId, customerId, vehicleId }) => {
+  const references = [
+    ['firmId', firmId, prisma.firm],
+    ['customerId', customerId, prisma.customer],
+    ['vehicleId', vehicleId, prisma.vehicle],
+  ];
+
+  for (const [field, id, model] of references) {
+    if (id && !(await model.findFirst({ where: { id, userId }, select: { id: true } }))) {
+      return field;
+    }
+  }
+  return null;
+};
 
 /**
  * GET /api/v1/invoices
  */
 export const getAllInvoices = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const { status, customerId, firmId, search } = req.query;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
     const where = {
-      ...userFilter,
+      userId,
       isActive: true,
     };
 
@@ -65,7 +110,7 @@ export const getInvoiceById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const invoice = await prisma.invoice.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
       include: {
         firm: true,
         customer: true,
@@ -94,7 +139,7 @@ export const getInvoiceById = async (req, res, next) => {
  */
 export const createInvoice = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const {
       invoiceNumber,
       invoiceDate,
@@ -122,6 +167,11 @@ export const createInvoice = async (req, res, next) => {
       paymentStatus,
       remarks,
     } = req.body;
+
+    const foreignReference = await findForeignReference(userId, { firmId, customerId, vehicleId });
+    if (foreignReference) {
+      return res.status(400).json({ success: false, message: `Invalid ${foreignReference}` });
+    }
 
     const generatedNumber = invoiceNumber || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -177,15 +227,22 @@ export const createInvoice = async (req, res, next) => {
 export const updateInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
     const existing = await prisma.invoice.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId, isActive: true },
     });
 
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
     }
 
-    const payload = { ...req.body };
+    const payload = pickFields(req.body, UPDATABLE_FIELDS);
+
+    const foreignReference = await findForeignReference(userId, payload);
+    if (foreignReference) {
+      return res.status(400).json({ success: false, message: `Invalid ${foreignReference}` });
+    }
+
     if (payload.customPartiesFields && typeof payload.customPartiesFields === 'object') {
       payload.customPartiesFields = JSON.stringify(payload.customPartiesFields);
     }
@@ -219,7 +276,7 @@ export const deleteInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.invoice.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {
@@ -244,7 +301,7 @@ export const getInvoiceSummary = async (req, res, next) => {
   try {
     const { id } = req.params;
     const invoice = await prisma.invoice.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!invoice) {

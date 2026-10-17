@@ -65,6 +65,42 @@ npm run apikey -- revoke <keyId>
 - Revoking deactivates the key (`isActive = false`); it is not deleted.
 - Keys can only be issued to existing, active users.
 
+### Integration endpoints
+
+Authenticate with `Authorization: Bearer ih_...`. A key only ever sees its owner's invoices.
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/v1/integrations/invoices` | List invoices, newest first |
+| `GET /api/v1/integrations/invoices/:id` | One invoice by id **or** invoice number |
+
+List query parameters (all optional):
+
+| Param | Description |
+|---|---|
+| `status` | Exact `paymentStatus` match, e.g. `pending` |
+| `from`, `to` | Filter on `invoiceDate`. `YYYY-MM-DD` or full ISO timestamp; a date-only `to` covers the whole day (UTC) |
+| `customer` | Case-insensitive match on customer name |
+| `limit` | 1–100, default 20 |
+| `cursor` | Pass `nextCursor` from the previous page |
+
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  "http://localhost:3000/api/v1/integrations/invoices?status=pending&from=2026-10-01"
+```
+
+Responses use a fixed field allowlist: no user ids, internal ids, street addresses, PINs, GSTIN, phone numbers or driver details.
+
+| Status | Meaning |
+|---|---|
+| 400 | Invalid query parameter |
+| 401 | Missing, invalid, revoked or expired key, or inactive owner |
+| 403 | Key lacks the `invoices:read` scope |
+| 404 | Invoice not found (including invoices owned by other users) |
+| 429 | More than 60 requests/minute for this key |
+
+Every request, including rejected ones, is recorded in the `api_audit_logs` table (key id, user id, method, path, query, status, IP, user agent, duration). API keys and response bodies are never logged.
+
 ---
 
 ## 📄 License & Copyright Notice
