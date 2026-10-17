@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/database.js';
 
 const Invoice = sequelize.define('Invoice', {
   id: {
@@ -77,4 +77,4 @@ const Invoice = sequelize.define('Invoice', {
   timestamps: true,
 });
 
-module.exports = Invoice;
+export default Invoice;

@@ -1,9 +1,11 @@
-const { prisma } = require('../config/prisma');
-const firmController = require('../controllers/firmController');
-const customerController = require('../controllers/customerController');
-const vehicleController = require('../controllers/vehicleController');
-const invoiceController = require('../controllers/invoiceController');
-const authController = require('../controllers/authController');
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+import { prisma } from '../config/prisma.js';
+import * as firmController from '../controllers/firmController.js';
+import * as customerController from '../controllers/customerController.js';
+import * as vehicleController from '../controllers/vehicleController.js';
+import * as invoiceController from '../controllers/invoiceController.js';
+import * as authController from '../controllers/authController.js';
 
 // Mock response object helper
 const mockResponse = () => {
@@ -167,7 +169,6 @@ async function runSoftDeleteTests() {
   console.log('\n--- Testing Legacy User Auto-Verification on Login ---');
   let legacyUserVerified = false;
   const originalUserUpdate = prisma.user.update;
-  const bcrypt = require('bcryptjs');
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('password123', salt);
 
@@ -221,11 +222,11 @@ async function runSoftDeleteTests() {
   }
 }
 
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   runSoftDeleteTests().catch(err => {
     console.error('Test runner failure:', err);
     process.exit(1);
   });
 }
 
-module.exports = { runSoftDeleteTests };
+export { runSoftDeleteTests };

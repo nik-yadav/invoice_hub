@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as firmController from '../controllers/firmController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const firmController = require('../controllers/firmController');
-const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', authMiddleware, firmController.getAllFirms);
 router.get('/:id', authMiddleware, firmController.getFirmById);
@@ -10,4 +11,4 @@ router.put('/:id', authMiddleware, firmController.updateFirm);
 router.patch('/:id/set-default', authMiddleware, firmController.setDefaultFirm);
 router.delete('/:id', authMiddleware, firmController.deleteFirm);
 
-module.exports = router;
+export default router;

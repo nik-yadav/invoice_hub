@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +11,4 @@ const initPrismaDb = async () => {
   }
 };
 
-module.exports = {
-  prisma,
-  initPrismaDb,
-};
+export { prisma, initPrismaDb };

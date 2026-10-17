@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as invoiceController from '../controllers/invoiceController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const invoiceController = require('../controllers/invoiceController');
-const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', authMiddleware, invoiceController.getAllInvoices);
 router.get('/:id', authMiddleware, invoiceController.getInvoiceById);
@@ -10,4 +11,4 @@ router.post('/', authMiddleware, invoiceController.createInvoice);
 router.put('/:id', authMiddleware, invoiceController.updateInvoice);
 router.delete('/:id', authMiddleware, invoiceController.deleteInvoice);
 
-module.exports = router;
+export default router;

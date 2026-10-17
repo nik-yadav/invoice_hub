@@ -1,9 +1,9 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/dashboard/metrics
  */
-exports.getMetrics = async (req, res, next) => {
+export const getMetrics = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
@@ -45,7 +45,7 @@ exports.getMetrics = async (req, res, next) => {
 /**
  * GET /api/v1/dashboard/recent-invoices
  */
-exports.getRecentInvoices = async (req, res, next) => {
+export const getRecentInvoices = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};

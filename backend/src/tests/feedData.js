@@ -1,5 +1,5 @@
-const { prisma } = require('../config/prisma');
-const feedJsonData = require('./feedData.json');
+import { prisma } from '../config/prisma.js';
+import feedJsonData from './feedData.json' with { type: 'json' };
 
 async function run() {
   console.log('🌱 Starting database feed...');
@@ -121,4 +121,4 @@ async function run() {
   }
 }
 
-module.exports = run;
+export default run;

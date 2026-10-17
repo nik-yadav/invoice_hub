@@ -1,3 +1,5 @@
+import { Resend } from 'resend';
+
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM = process.env.RESEND_FROM || 'Transport Invoice Pro <onboarding@resend.dev>';
 const RESEND_API_URL = 'https://api.resend.com/emails';
@@ -5,10 +7,9 @@ const RESEND_API_URL = 'https://api.resend.com/emails';
 let resendClient = null;
 if (RESEND_API_KEY) {
   try {
-    const { Resend } = require('resend');
     resendClient = new Resend(RESEND_API_KEY);
   } catch (_) {
-    // If resend npm package is not installed, fallback to native fetch
+    // If the Resend client fails to initialize, fallback to native fetch
   }
 }
 
@@ -108,7 +109,7 @@ async function sendEmail({ to, subject, html, text, from = RESEND_FROM, replyTo,
     throw error;
   }
 }
-module.exports = {
+export default {
   isConfigured,
   sendEmail,
 };

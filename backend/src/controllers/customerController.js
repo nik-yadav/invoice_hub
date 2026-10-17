@@ -1,9 +1,9 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/customers
  */
-exports.getAllCustomers = async (req, res, next) => {
+export const getAllCustomers = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { search } = req.query;
@@ -42,7 +42,7 @@ exports.getAllCustomers = async (req, res, next) => {
 /**
  * GET /api/v1/customers/:id
  */
-exports.getCustomerById = async (req, res, next) => {
+export const getCustomerById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const customer = await prisma.customer.findFirst({
@@ -62,7 +62,7 @@ exports.getCustomerById = async (req, res, next) => {
 /**
  * POST /api/v1/customers
  */
-exports.createCustomer = async (req, res, next) => {
+export const createCustomer = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { customerName, customer_name, phone, gstin, address, city, state, pin } = req.body;
@@ -99,7 +99,7 @@ exports.createCustomer = async (req, res, next) => {
 /**
  * PUT /api/v1/customers/:id
  */
-exports.updateCustomer = async (req, res, next) => {
+export const updateCustomer = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.customer.findFirst({
@@ -128,7 +128,7 @@ exports.updateCustomer = async (req, res, next) => {
 /**
  * DELETE /api/v1/customers/:id
  */
-exports.deleteCustomer = async (req, res, next) => {
+export const deleteCustomer = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.customer.findFirst({
