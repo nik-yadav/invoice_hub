@@ -111,3 +111,22 @@ Every request, including rejected ones, is recorded in the `api_audit_logs` tabl
 Copyright (c) 2026 Transport Invoice Pro. All Rights Reserved.
 Proprietary & Confidential Software.
 ```
+
+## OAuth for the MCP server
+
+The backend is also the OAuth 2.1 authorization server that the [MCP server](../mcp-server/README.md) points clients to. Access tokens it issues are ordinary `api_keys` rows (with `clientId` set), so the integration endpoints treat them like any other key.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /.well-known/oauth-authorization-server` | Metadata (RFC 8414) |
+| `POST /oauth/register` | Dynamic client registration (RFC 7591). Public clients only, with http://localhost or https redirect URIs |
+| `GET /oauth/authorize` | Validates the request (PKCE S256 required), then redirects to the sign-in page |
+| `GET /oauth/requests/:id`, `POST /oauth/requests/:id/approve`, `POST /oauth/requests/:id/deny` | Used by the sign-in page in `mcp-frontend/` |
+| `POST /oauth/token` | `authorization_code` and `refresh_token` grants. Access tokens last 1 hour and refresh tokens 30 days, and both rotate on refresh |
+| `POST /oauth/revoke` | Revokes a connection (RFC 7009) |
+| `POST /oauth/introspect` | Token check used by the MCP server (RFC 7662) |
+
+Environment variables:
+
+- `OAUTH_ISSUER`: this backend's public URL (default `http://localhost:<PORT>`). It must match the MCP server's `AUTH_SERVER_URL`.
+- `MCP_FRONTEND_URL`: the sign-in page (default `http://localhost:3000`). In production, also add its origin to `ALLOWED_ORIGINS`.
