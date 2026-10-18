@@ -52,7 +52,7 @@ Read-only API keys (scope `invoices:read`) are issued from the command line. The
 
 ```bash
 # Create a key for a user (--name and --expires-days are optional)
-npm run apikey -- create user@example.com --name "Claude Desktop" --expires-days 90
+npm run apikey -- create user@example.com --name "Claude Code" --expires-days 90
 
 # List a user's keys (id, name, status, expiry, last used)
 npm run apikey -- list user@example.com
@@ -98,6 +98,8 @@ Responses use a fixed field allowlist: no user ids, internal ids, street address
 | 403 | Key lacks the `invoices:read` scope |
 | 404 | Invoice not found (including invoices owned by other users) |
 | 429 | More than 60 requests/minute for this key |
+
+These endpoints are what the [MCP server](../mcp-server/README.md) calls on Claude's behalf.
 
 Every request, including rejected ones, is recorded in the `api_audit_logs` table (key id, user id, method, path, query, status, IP, user agent, duration). API keys and response bodies are never logged.
 

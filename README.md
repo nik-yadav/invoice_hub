@@ -17,8 +17,11 @@
 ```
 invoice_hub/
 ├── transport_invoice_pro/     # Cross-Platform Flutter Frontend Application
-└── backend/                   # Node.js, Express.js & Prisma ORM Backend API
+├── backend/                   # Node.js, Express.js & Prisma ORM Backend API
+└── mcp-server/                # Read-only HTTP MCP server so Claude can look up invoices
 ```
+
+See [`mcp-server/README.md`](mcp-server/README.md) to connect Claude.
 
 ### 📱 Frontend (Mobile, Desktop & Web)
 - **Framework**: Flutter SDK (v3.2.0+)
