@@ -43,25 +43,34 @@ The MCP endpoint is `http://localhost:4000/mcp`. Keep the backend running too.
 
 ### 3. Connect Claude Code
 
-Until the OAuth login flow is in place, pass a key from `npm run apikey -- create <email>` (run in `backend/`) as a header:
+Three services must be running: the backend (`backend/`, port 3001), the sign-in page (`mcp-frontend/`, `npm run dev`, port 3000) and this server.
+
+```bash
+claude mcp add --transport http invoice-hub http://localhost:4000/mcp
+```
+
+Then, in Claude Code, run `/mcp`, pick **invoice-hub** and choose **Authenticate**. A browser opens on the sign-in page, and you sign in with your Transport Invoice Pro account and allow access. Claude Code stores the tokens itself and refreshes them, so there are no keys to copy.
+
+To disconnect, use `/mcp` → **Clear authentication**, or revoke the connection's key with `npm run apikey -- revoke <keyId>` in `backend/`. OAuth connections appear in `npm run apikey -- list <email>` under the client's name.
+
+Keys from `npm run apikey -- create` still work, for clients without OAuth support:
 
 ```bash
 claude mcp add --transport http invoice-hub http://localhost:4000/mcp \
   --header "Authorization: Bearer ih_your_key_here"
 ```
 
-Check it with `claude mcp list`. Once OAuth is available, drop the `--header` and authenticate from `/mcp` in Claude Code instead.
+### How sign-in works
 
-> With `--header`, the key is stored in your Claude Code config in plain text. Revoke it (`npm run apikey -- revoke <keyId>`) if it leaks.
-
-### Auth behaviour
-
-- A request without a token gets `401` with `WWW-Authenticate: Bearer resource_metadata="…"`, pointing to `/.well-known/oauth-protected-resource/mcp`. That document names the authorization server where clients log in.
-- The token itself is validated by the backend on each tool call. An invalid, revoked or expired token comes back as a tool error.
+1. A request without a valid token gets `401` with `WWW-Authenticate: Bearer resource_metadata="…"`, which points to `/.well-known/oauth-protected-resource/mcp`. That document names the backend as the authorization server.
+2. Claude Code reads the backend's `/.well-known/oauth-authorization-server` and registers itself at `/oauth/register`. Then it opens `/oauth/authorize` with PKCE.
+3. The backend stores the request and redirects to the sign-in page (`MCP_FRONTEND_URL`) with `?request_id=…`. Approving signs the user in and sends the browser back to Claude Code's local callback with a one-time code.
+4. Claude Code exchanges the code at `/oauth/token`. The access token is an `ih_` API key valid for 1 hour, and it comes with a 30-day refresh token. Both are rotated on every refresh.
+5. On each request, this server checks the token with the backend's `/oauth/introspect`, caching the result for 60 seconds. Expired or revoked tokens get a `401`, which makes Claude Code refresh or ask you to sign in again.
 
 ## Testing without Claude
 
-Start the server, then run `npm run inspect`. In the Inspector, choose transport **Streamable HTTP**, URL `http://localhost:4000/mcp`, and add the header `Authorization: Bearer ih_...`.
+Start the server, then run `npm run inspect`. In the Inspector, choose transport **Streamable HTTP** and URL `http://localhost:4000/mcp`. Then either use its OAuth flow, or add the header `Authorization: Bearer ih_...`.
 
 ## End-to-end checklist
 
@@ -80,7 +89,9 @@ With the backend and this server running, and the server connected in Claude:
 | Symptom | Likely cause |
 |---|---|
 | `claude mcp list` shows the server as failed | The MCP server isn't running, or the URL or port is wrong. |
-| `401` with "Missing access token" | No `Authorization` header was sent. Re-add the server with `--header`. |
+| `401` and Claude Code keeps asking to authenticate | The token was revoked or the refresh token expired. Authenticate again from `/mcp`. |
+| Sign-in page says the link expired | Sign-in requests last 10 minutes. Start again from `/mcp`. |
+| Browser shows "The redirect URI is not registered" | Stale client registration. Run `/mcp` → **Clear authentication**, then authenticate again. |
 | `INVOICE_API_URL must be set` | Missing from `mcp-server/.env` or the environment. |
 | `403` "Invalid Host header" | `HOST` isn't localhost and the request's host isn't in `ALLOWED_HOSTS`. |
 | `Could not reach the invoice API` | Backend not running, or wrong URL or port. |

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 // Read-only MCP server (Streamable HTTP) that exposes the backend's integration endpoints as tools.
-// Each request carries the user's own bearer token, which is forwarded to the backend as is,
-// so the backend's API key auth, scopes, rate limit and audit log still apply per user.
+// Each request carries the user's own OAuth access token. It is checked with the backend's
+// introspection endpoint, then forwarded as is, so the backend's API key auth, scopes, rate
+// limit and audit log still apply per user.
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
 import { getOAuthProtectedResourceMetadataUrl } from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
+import { InvalidTokenError, ServerError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { z } from 'zod';
 import { createRequire } from 'module';
 
@@ -14,6 +17,8 @@ import { createRequire } from 'module';
 const { version } = createRequire(import.meta.url)('../package.json');
 
 const REQUEST_TIMEOUT_MS = 10_000;
+// How long a successful token check is reused before asking the backend again.
+const TOKEN_CACHE_MS = 60_000;
 
 // Load mcp-server/.env if present. Variables already set in the environment win.
 try {
@@ -27,7 +32,7 @@ const HOST = process.env.HOST || '127.0.0.1';
 const API_URL = process.env.INVOICE_API_URL;
 // Public URL clients use to reach this server, without the /mcp path.
 const PUBLIC_URL = process.env.MCP_PUBLIC_URL || `http://localhost:${PORT}`;
-// Where users log in to get a token. The backend will act as the OAuth authorization server.
+// OAuth authorization server where users sign in: the backend.
 const AUTH_SERVER_URL = process.env.AUTH_SERVER_URL || API_URL;
 // Comma-separated Host headers to accept when bound to a public interface, e.g. "mcp.invoicepro.com".
 const ALLOWED_HOSTS = process.env.ALLOWED_HOSTS?.split(',').map(host => host.trim()).filter(Boolean);
@@ -161,26 +166,65 @@ const protectedResourceMetadata = (req, res) => {
 app.get('/.well-known/oauth-protected-resource', protectedResourceMetadata);
 app.get(new URL(RESOURCE_METADATA_URL).pathname, protectedResourceMetadata);
 
-// A missing token gets a 401 pointing at the metadata above, which starts the client's login flow.
-// The token itself is validated by the backend on each tool call.
-const requireToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
+// Validates access tokens with the backend's introspection endpoint (RFC 7662).
+// Results are cached briefly so each MCP message doesn't cost a backend round trip.
+const tokenCache = new Map();
 
-  if (!token) {
-    res.set(
-      'WWW-Authenticate',
-      `Bearer error="invalid_token", error_description="Missing access token", resource_metadata="${RESOURCE_METADATA_URL}"`,
-    );
-    return res.status(401).json({ error: 'invalid_token', error_description: 'Missing access token' });
+const introspect = async token => {
+  let response;
+  try {
+    response = await fetch(`${AUTH_SERVER_URL}/oauth/introspect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ token }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new ServerError(`Could not reach the authorization server: ${error.message}`);
   }
-
-  req.token = token;
-  next();
+  if (!response.ok) throw new ServerError(`Token introspection failed (HTTP ${response.status})`);
+  return response.json();
 };
 
+const verifier = {
+  async verifyAccessToken(token) {
+    const cached = tokenCache.get(token);
+    if (cached && cached.checkedAt + TOKEN_CACHE_MS > Date.now() && cached.authInfo.expiresAt * 1000 > Date.now()) {
+      return cached.authInfo;
+    }
+    tokenCache.delete(token);
+
+    const result = await introspect(token);
+    if (!result.active) throw new InvalidTokenError('Token is invalid, revoked or expired');
+    // A token issued for another resource must not be replayed here. Keys made with the
+    // backend's apiKey script have no audience and are accepted.
+    if (result.aud && result.aud.replace(/\/$/, '') !== MCP_URL.href.replace(/\/$/, '')) {
+      throw new InvalidTokenError('Token was not issued for this server');
+    }
+
+    const authInfo = {
+      token,
+      clientId: result.client_id ?? 'api-key',
+      scopes: result.scope ? result.scope.split(' ') : [],
+      // Script-made keys may never expire; the SDK needs a number, so recheck them after the cache window.
+      expiresAt: result.exp ?? Math.floor((Date.now() + TOKEN_CACHE_MS) / 1000),
+    };
+    if (tokenCache.size > 10_000) tokenCache.clear();
+    tokenCache.set(token, { authInfo, checkedAt: Date.now() });
+    return authInfo;
+  },
+};
+
+// Missing, invalid or expired tokens get a 401 whose WWW-Authenticate header points at the
+// metadata above, which is what makes clients like Claude Code start (or refresh) sign-in.
+const requireToken = requireBearerAuth({
+  verifier,
+  requiredScopes: ['invoices:read'],
+  resourceMetadataUrl: RESOURCE_METADATA_URL,
+});
+
 app.post('/mcp', requireToken, async (req, res) => {
-  const server = createServer(req.token);
+  const server = createServer(req.auth.token);
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 
   res.on('close', () => {

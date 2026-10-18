@@ -1,16 +1,24 @@
 "use client";
 
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type SubmitEvent } from "react";
 import { useSearchParams } from "next/navigation";
 
-type View = "login" | "done" | "cancel";
+// Sign-in and consent page for the backend's OAuth flow. The backend's /oauth/authorize sends
+// the browser here with ?request_id=…; approving or cancelling returns a redirectTo URL
+// (the client's validated callback), which the browser then follows.
 
-const isLocal = (u: string) => /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(u);
+type View = "loading" | "invalid" | "login" | "done" | "cancel";
 
-const withParams = (base: string, params: Record<string, string>) => {
-  const url = new URL(base);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  return url.toString();
+type AuthRequest = {
+  clientName: string;
+  scopes: string[];
+  redirectHost: string;
+};
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+const SCOPE_LABELS: Record<string, string> = {
+  "invoices:read": "Read your invoices: numbers, dates, customers, routes, amounts and payment status",
 };
 
 const focus =
@@ -18,72 +26,84 @@ const focus =
 const muted = "text-[#5A6580] dark:text-[#9AA5BF]";
 const input = `w-full min-h-12 rounded-[10px] border border-[#D8DEEA] bg-[#F4F6FB] px-3.5 py-3 text-[#14213D] dark:border-[#2A3348] dark:bg-[#1D2538] dark:text-[#E8ECF6] ${focus}`;
 const primary = `w-full min-h-12 rounded-xl bg-[#3547D4] px-4 py-3 font-semibold text-white disabled:cursor-progress disabled:opacity-60 dark:bg-[#7C8BFF] dark:text-[#0B101C] ${focus}`;
-const ghost = `mt-2.5 w-full min-h-12 rounded-xl border border-[#D8DEEA] px-4 py-3 font-semibold dark:border-[#2A3348] ${focus}`;
-const link = "text-[#3547D4] underline dark:text-[#7C8BFF]";
+const ghost = `mt-2.5 w-full min-h-12 rounded-xl border border-[#D8DEEA] px-4 py-3 font-semibold disabled:opacity-60 dark:border-[#2A3348] ${focus}`;
+
+async function post(path: string, body?: object) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message ?? "Something went wrong. Try again.");
+  return data;
+}
 
 function AuthForm() {
-  const sp = useSearchParams();
-  const server = sp.get("server") ?? "acme-mcp";
-  const redirect = sp.get("redirect_uri") ?? "";
-  const state = sp.get("state") ?? "";
-  const local = isLocal(redirect);
+  const requestId = useSearchParams().get("request_id") ?? "";
 
-  const [view, setView] = useState<View>("login");
+  const [view, setView] = useState<View>(requestId ? "loading" : "invalid");
+  const [request, setRequest] = useState<AuthRequest | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    requestId ? "" : "This page opens from your app's sign-in. Start again from your terminal.",
+  );
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState("");
-  const [copied, setCopied] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
+  useEffect(() => {
+    if (!requestId) return;
+    fetch(`${API_URL}/oauth/requests/${encodeURIComponent(requestId)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message ?? "This sign-in link is not valid.");
+        setRequest(data);
+        setView("login");
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Could not load this sign-in request.");
+        setView("invalid");
+      });
+  }, [requestId]);
+
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setError("Enter a valid email address.");
-    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (!password) return setError("Enter your password.");
 
     setLoading(true);
     try {
-      const res = await fetch("/api/mcp/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password, redirect_uri: redirect, state }),
+      const data = await post(`/oauth/requests/${encodeURIComponent(requestId)}/approve`, {
+        email: email.trim(),
+        password,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Sign-in failed. Check your details and try again.");
-
-      setToken(data.token);
       setPassword("");
       setView("done");
-      if (local) {
-        setTimeout(() => {
-          window.location.href = withParams(redirect, { code: data.token, state });
-        }, 1200);
-      }
+      setTimeout(() => window.location.assign(data.redirectTo), 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+      setError(err instanceof Error ? err.message : "Sign-in failed. Check your details and try again.");
     } finally {
       setLoading(false);
     }
   }
 
-  function cancel() {
-    setView("cancel");
-    if (local) window.location.href = withParams(redirect, { error: "access_denied", state });
-  }
-
-  async function copy() {
+  async function cancel() {
+    setLoading(true);
     try {
-      await navigator.clipboard.writeText(token);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      const data = await post(`/oauth/requests/${encodeURIComponent(requestId)}/deny`);
+      setView("cancel");
+      window.location.assign(data.redirectTo);
     } catch {
-      /* clipboard blocked: the token is selectable in the box */
+      // The request already expired: nothing to tell the client, it will time out on its own.
+      setView("cancel");
+    } finally {
+      setLoading(false);
     }
   }
 
-  const cmd = `claude mcp add --transport http ${server} https://mcp.example.com`;
+  const client = request?.clientName ?? "Claude";
 
   return (
     <main className="w-full max-w-[460px]">
@@ -92,9 +112,9 @@ function AuthForm() {
         aria-live="polite"
         className="overflow-x-auto whitespace-pre rounded-t-[14px] bg-[#101828] px-4 py-3.5 font-mono text-[0.8rem] leading-relaxed text-[#D6DEF0] dark:bg-[#070B14]"
       >
-        <span className="text-[#7E8AA8]">$</span> {cmd}
+        <span className="text-[#7E8AA8]">$</span> /mcp → invoice-hub → Authenticate
         {"\n"}
-        {view === "login" && (
+        {(view === "loading" || view === "login") && (
           <>
             <span className="text-[#7E8AA8]">Opening browser to authenticate…</span>
             {"\n"}Waiting for sign-in{" "}
@@ -105,19 +125,29 @@ function AuthForm() {
           <>
             <span className="text-[#5CD39A]">✓</span> Authenticated as {email}
             {"\n"}
-            <span className="text-[#5CD39A]">✓</span> Token saved. {server} is ready
+            <span className="text-[#5CD39A]">✓</span> Sending authorization to {request?.redirectHost}
           </>
         )}
-        {view === "cancel" && <>Authentication cancelled. No server was added.</>}
+        {view === "cancel" && <>Authentication cancelled.</>}
+        {view === "invalid" && <>Sign-in request not found.</>}
       </div>
 
       <div className="rounded-b-[20px] border border-t-0 border-[#D8DEEA] bg-white p-6 shadow-[0_12px_40px_rgba(20,33,61,0.08)] dark:border-[#2A3348] dark:bg-[#161D2E]">
-        {view === "login" && (
+        {view === "loading" && <p className={muted}>Loading sign-in request…</p>}
+
+        {view === "invalid" && (
+          <div>
+            <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight">Can’t continue</h1>
+            <p role="alert" className={`mb-2 ${muted}`}>{error}</p>
+          </div>
+        )}
+
+        {view === "login" && request && (
           <form onSubmit={onSubmit} noValidate>
-            <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight">Sign in to connect your terminal</h1>
+            <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight">Sign in to connect {client}</h1>
             <p className={`mb-5 ${muted}`}>
-              Claude Code asked to add <b className="text-inherit">{server}</b>. Sign in and we’ll send an access token back
-              to the terminal.
+              <b className="text-inherit">{client}</b> wants to access your Transport Invoice Pro account. Sign in to
+              allow it.
             </p>
 
             <div className="mb-4">
@@ -148,66 +178,40 @@ function AuthForm() {
               <p role="alert" className="mb-3.5 text-sm text-[#B3261E] dark:text-[#FF8A80]">{error}</p>
             )}
 
-            <div className="mb-4 flex justify-between text-sm">
-              <a href="#" className={link}>Forgot password?</a>
-              <a href="#" className={link}>Create account</a>
+            <div className={`mb-4 rounded-xl border border-[#D8DEEA] bg-[#F4F6FB] px-3.5 py-3 text-sm dark:border-[#2A3348] dark:bg-[#1D2538] ${muted}`}>
+              <b className="text-[#14213D] dark:text-[#E8ECF6]">{client} will be able to:</b>
+              <ul className="mt-1.5 list-disc pl-5">
+                {request.scopes.map((scope) => (
+                  <li key={scope}>{SCOPE_LABELS[scope] ?? scope}</li>
+                ))}
+              </ul>
+              <p className="mt-1.5">It can’t create, change or delete anything, or see your password.</p>
             </div>
 
-            <p className={`mb-4 rounded-xl border border-[#D8DEEA] bg-[#F4F6FB] px-3.5 py-3 text-sm dark:border-[#2A3348] dark:bg-[#1D2538] ${muted}`}>
-              <b className="text-[#14213D] dark:text-[#E8ECF6]">This token lets Claude Code</b> call tools on your MCP server
-              as you. It can’t change your password or billing.
-            </p>
-
             <button type="submit" disabled={loading} className={primary}>
-              {loading ? "Signing in…" : "Sign in and continue"}
+              {loading ? "Signing in…" : "Sign in and allow"}
             </button>
-            <button type="button" onClick={cancel} className={ghost}>Cancel</button>
+            <button type="button" onClick={cancel} disabled={loading} className={ghost}>Cancel</button>
           </form>
         )}
 
         {view === "done" && (
           <div>
             <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight">You’re connected</h1>
-            <p className={`mb-5 ${muted}`}>
-              {local
-                ? `Signed in as ${email}. Sending your token to the terminal now.`
-                : `Signed in as ${email}. You can return to your terminal.`}
-            </p>
-
-            <label className="mb-1.5 block text-sm font-semibold">Access token</label>
-            <div className="mb-2 flex gap-2">
-              <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[10px] border border-[#D8DEEA] bg-[#F4F6FB] px-3.5 py-3 font-mono text-[0.8rem] dark:border-[#2A3348] dark:bg-[#1D2538]">
-                {token}
-              </code>
-              <button
-                type="button" onClick={copy}
-                className={`min-w-[72px] rounded-[10px] border border-[#D8DEEA] px-3.5 text-sm font-semibold dark:border-[#2A3348] ${focus}`}
-              >
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-            {!local && (
-              <p className={`mb-5 text-sm ${muted}`}>If your terminal didn’t pick it up, paste this token when it asks.</p>
-            )}
-
-            <button type="button" onClick={() => window.close()} className={`${primary} mt-5`}>Done</button>
-            <button type="button" onClick={() => { setToken(""); setView("login"); }} className={ghost}>
-              Revoke token
-            </button>
+            <p className={muted}>Signed in as {email}. Returning you to {client}… You can close this tab afterwards.</p>
           </div>
         )}
 
         {view === "cancel" && (
           <div>
             <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight">Sign-in cancelled</h1>
-            <p className={`mb-5 ${muted}`}>
-              No token was created. Run <b className="text-inherit">claude mcp add</b> again when you’re ready.
-            </p>
-            <button type="button" onClick={() => setView("login")} className={primary}>Back to sign in</button>
+            <p className={muted}>Nothing was shared. Authenticate again from your terminal when you’re ready.</p>
           </div>
         )}
 
-        <p className={`mt-4 text-center text-xs ${muted}`}>Tokens are stored by Claude Code on this computer only.</p>
+        <p className={`mt-4 text-center text-xs ${muted}`}>
+          Access lasts until you revoke it. Tokens are stored by {client} on your computer.
+        </p>
       </div>
     </main>
   );
