@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 const authMiddleware = (req, res, next) => {
   try {
@@ -41,6 +41,5 @@ const optionalAuthMiddleware = (req, res, next) => {
   next();
 };
 
-module.exports = authMiddleware;
-module.exports.authMiddleware = authMiddleware;
-module.exports.optionalAuthMiddleware = optionalAuthMiddleware;
+export default authMiddleware;
+export { authMiddleware, optionalAuthMiddleware };

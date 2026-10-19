@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "Node.js Express & Prisma ORM backend for Transport Invoice Pro",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node src/tests/testEmailValidation.js && node src/tests/testSoftDelete.js",
-    "seed": "node -e \"require('./src/tests/feedData')()\"",
+    "apikey": "node scripts/apiKey.js",
+    "feeddata": "node scripts/feedData.js",
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push"
   },

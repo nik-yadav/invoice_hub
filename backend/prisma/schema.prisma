@@ -9,24 +9,26 @@ datasource db {
 }
 
 model User {
-  id                String     @id @default(uuid())
-  email             String     @unique
-  password          String
-  fullName          String?
-  companyName       String?
-  phone             String?
-  isVerified        Boolean    @default(false)
-  verificationToken String?    @unique
-  tokenExpiresAt    DateTime?
-  isActive          Boolean    @default(true)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  customers         Customer[]
-  firms             Firm[]
-  invoices          Invoice[]
-  profile           Profile?
-  vehicles          Vehicle[]
-  sessions          Session[]
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  password            String
+  fullName            String?
+  companyName         String?
+  phone               String?
+  isVerified          Boolean              @default(false)
+  verificationToken   String?              @unique
+  tokenExpiresAt      DateTime?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  customers           Customer[]
+  firms               Firm[]
+  invoices            Invoice[]
+  profile             Profile?
+  vehicles            Vehicle[]
+  sessions            Session[]
+  apiKeys             ApiKey[]
+  oauthAuthorizations OAuthAuthorization[]
 }
 
 model Session {
@@ -45,7 +47,7 @@ model Session {
 
 model Profile {
   id                        String   @id @default(uuid())
-  userId                    String?  @unique
+  userId                    String   @unique
   fullName                  String   @default("")
   companyName               String   @default("")
   email                     String   @default("")
@@ -58,7 +60,7 @@ model Profile {
   isActive                  Boolean  @default(true)
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
-  user                      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Firm {
@@ -82,8 +84,8 @@ model Firm {
   isActive           Boolean   @default(true)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  userId             String?
-  user               User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices           Invoice[]
 }
 
@@ -99,8 +101,8 @@ model Customer {
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  userId       String?
-  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices     Invoice[]
 }
 
@@ -117,9 +119,9 @@ model Vehicle {
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  userId          String?
+  userId          String
   invoices        Invoice[]
-  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {
@@ -152,10 +154,10 @@ model Invoice {
   isActive             Boolean   @default(true)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
-  userId               String?
+  userId               String
   customer             Customer? @relation(fields: [customerId], references: [id])
   firm                 Firm?     @relation(fields: [firmId], references: [id])
-  user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle              Vehicle?  @relation(fields: [vehicleId], references: [id])
 }
 
@@ -165,4 +167,87 @@ model BlockedSignup {
   reason    String
   ipAddress String?
   createdAt DateTime @default(now())
+}
+
+enum AccessType {
+  READ_ONLY
+  READ_WRITE
+}
+
+model ApiKey {
+  id         String     @id @default(uuid())
+  keyHash    String     @unique
+  name       String?
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes     String[]   @default(["invoices:read"])
+  accessType AccessType @default(READ_ONLY)
+  isActive   Boolean    @default(true)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Set only for keys issued through OAuth; keys from scripts/apiKey.js leave these null.
+  clientId         String?
+  client           OAuthClient? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  refreshTokenHash String?      @unique
+  refreshExpiresAt DateTime?
+  resource         String?
+
+  @@map("api_keys")
+}
+
+// An OAuth client registered through dynamic client registration (RFC 7591), e.g. Claude Code.
+model OAuthClient {
+  id             String               @id @default(uuid())
+  name           String?
+  redirectUris   String[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  apiKeys        ApiKey[]
+  authorizations OAuthAuthorization[]
+
+  @@map("oauth_clients")
+}
+
+// One /oauth/authorize attempt. Pending until the user approves it on the sign-in page,
+// then holds the single-use authorization code until it is exchanged at /oauth/token.
+model OAuthAuthorization {
+  id            String      @id @default(uuid())
+  clientId      String
+  client        OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  redirectUri   String
+  state         String?
+  codeChallenge String
+  scopes        String[]
+  resource      String?
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash      String?     @unique
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([expiresAt])
+  @@map("oauth_authorizations")
+}
+
+// No foreign keys on purpose: audit rows must outlive deleted keys and users.
+model ApiAuditLog {
+  id         String   @id @default(uuid())
+  apiKeyId   String?
+  userId     String?
+  method     String
+  path       String
+  query      Json?
+  statusCode Int
+  ip         String?
+  userAgent  String?
+  durationMs Int
+  createdAt  DateTime @default(now())
+
+  @@index([apiKeyId, createdAt])
+  @@index([userId, createdAt])
+  @@map("api_audit_logs")
 }

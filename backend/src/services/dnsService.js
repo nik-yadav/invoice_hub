@@ -1,4 +1,4 @@
-const dns = require('dns').promises;
+import { promises as dns } from 'dns';
 
 // Pre-cached popular public email domains to avoid unnecessary DNS calls
 const POPULAR_DOMAINS = new Set([
@@ -75,7 +75,7 @@ async function checkMxRecords(domain) {
   }
 }
 
-module.exports = {
+export default {
   checkMxRecords,
   mxCache
 };

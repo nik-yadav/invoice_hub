@@ -1,15 +1,26 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
+import { pickFields } from '../utils/pickFields.js';
+
+const UPDATABLE_FIELDS = [
+  'vehicleNumber',
+  'type',
+  'capacity',
+  'driverName',
+  'driverPhone',
+  'insuranceNumber',
+  'fitnessExpiry',
+  'status',
+];
 
 /**
  * GET /api/v1/vehicles
  */
-exports.getAllVehicles = async (req, res, next) => {
+export const getAllVehicles = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const { status } = req.query;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
-    const where = {
-      ...userFilter,
+        const where = {
+      userId,
       isActive: true,
     };
 
@@ -31,11 +42,11 @@ exports.getAllVehicles = async (req, res, next) => {
 /**
  * GET /api/v1/vehicles/:id
  */
-exports.getVehicleById = async (req, res, next) => {
+export const getVehicleById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const vehicle = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!vehicle) {
@@ -51,9 +62,9 @@ exports.getVehicleById = async (req, res, next) => {
 /**
  * POST /api/v1/vehicles
  */
-exports.createVehicle = async (req, res, next) => {
+export const createVehicle = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const {
       vehicleNumber,
       type,
@@ -97,11 +108,11 @@ exports.createVehicle = async (req, res, next) => {
 /**
  * PUT /api/v1/vehicles/:id
  */
-exports.updateVehicle = async (req, res, next) => {
+export const updateVehicle = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {
@@ -110,7 +121,7 @@ exports.updateVehicle = async (req, res, next) => {
 
     const vehicle = await prisma.vehicle.update({
       where: { id },
-      data: req.body,
+      data: pickFields(req.body, UPDATABLE_FIELDS),
     });
 
     return res.status(200).json({
@@ -126,7 +137,7 @@ exports.updateVehicle = async (req, res, next) => {
 /**
  * PATCH /api/v1/vehicles/:id/status
  */
-exports.updateVehicleStatus = async (req, res, next) => {
+export const updateVehicleStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -136,7 +147,7 @@ exports.updateVehicleStatus = async (req, res, next) => {
     }
 
     const existing = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Vehicle not found' });
@@ -160,11 +171,11 @@ exports.updateVehicleStatus = async (req, res, next) => {
 /**
  * DELETE /api/v1/vehicles/:id
  */
-exports.deleteVehicle = async (req, res, next) => {
+export const deleteVehicle = async (req, res, next) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findFirst({
-      where: { id, isActive: true },
+      where: { id, userId: req.user.id, isActive: true },
     });
 
     if (!existing) {

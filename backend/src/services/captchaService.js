@@ -67,6 +67,6 @@ async function verifyCaptcha(token, ipAddress) {
   }
 }
 
-module.exports = {
+export default {
   verifyCaptcha
 };

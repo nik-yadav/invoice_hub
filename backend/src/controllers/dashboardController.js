@@ -1,13 +1,12 @@
-const { prisma } = require('../config/prisma');
+import { prisma } from '../config/prisma.js';
 
 /**
  * GET /api/v1/dashboard/metrics
  */
-exports.getMetrics = async (req, res, next) => {
+export const getMetrics = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
-    const where = { ...userFilter, isActive: true };
+    const userId = req.user.id;
+    const where = { userId, isActive: true };
 
     const totalInvoices = await prisma.invoice.count({ where });
     const totalCustomers = await prisma.customer.count({ where });
@@ -22,8 +21,8 @@ exports.getMetrics = async (req, res, next) => {
       _sum: { totalAmount: true },
     });
 
-    const totalRevenue = totalAgg._sum.totalAmount || (userId ? 0.0 : 142300.0);
-    const pendingAmount = pendingAgg._sum.totalAmount || (userId ? 0.0 : 45000.0);
+    const totalRevenue = totalAgg._sum.totalAmount || 0.0;
+    const pendingAmount = pendingAgg._sum.totalAmount || 0.0;
 
     return res.status(200).json({
       success: true,
@@ -45,11 +44,10 @@ exports.getMetrics = async (req, res, next) => {
 /**
  * GET /api/v1/dashboard/recent-invoices
  */
-exports.getRecentInvoices = async (req, res, next) => {
+export const getRecentInvoices = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
-    const userFilter = userId ? { OR: [{ userId }, { userId: null }] } : {};
-    const where = { ...userFilter, isActive: true };
+    const userId = req.user.id;
+    const where = { userId, isActive: true };
 
     const recentInvoices = await prisma.invoice.findMany({
       where,

@@ -1,23 +1,27 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-require('dotenv').config();
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
 
-const { initPrismaDb } = require('./src/config/prisma');
-const errorHandler = require('./src/middleware/errorHandler');
+import { initPrismaDb } from './src/config/prisma.js';
+import errorHandler from './src/middleware/errorHandler.js';
 
 // Import routes
-const authRoutes = require('./src/routes/authRoutes');
-const profileRoutes = require('./src/routes/profileRoutes');
-const firmRoutes = require('./src/routes/firmRoutes');
-const customerRoutes = require('./src/routes/customerRoutes');
-const vehicleRoutes = require('./src/routes/vehicleRoutes');
-const invoiceRoutes = require('./src/routes/invoiceRoutes');
-const dashboardRoutes = require('./src/routes/dashboardRoutes');
-const uploadRoutes = require('./src/routes/uploadRoutes');
+import authRoutes from './src/routes/authRoutes.js';
+import profileRoutes from './src/routes/profileRoutes.js';
+import firmRoutes from './src/routes/firmRoutes.js';
+import customerRoutes from './src/routes/customerRoutes.js';
+import vehicleRoutes from './src/routes/vehicleRoutes.js';
+import invoiceRoutes from './src/routes/invoiceRoutes.js';
+import dashboardRoutes from './src/routes/dashboardRoutes.js';
+import uploadRoutes from './src/routes/uploadRoutes.js';
+import integrationRoutes from './src/routes/integrationRoutes.js';
+import oauthRoutes from './src/routes/oauthRoutes.js';
+import { metadata as oauthMetadata } from './src/controllers/oauthController.js';
 
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import blocklistService from './src/services/blocklistService.js';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET)) {
   console.error('FATAL ERROR: JWT_SECRET must be set to a secure custom value in production.');
@@ -94,6 +98,9 @@ app.use('/api/v1/auth/forgot-password', authLimiter);
 app.use('/api/v1/auth/reset-password', authLimiter);
 app.use('/api/v1/auth/resend-verification', resendVerificationLimiter);
 app.use('/api/', generalLimiter);
+app.use('/oauth/requests/:id/approve', authLimiter);
+// Introspection is left out: every MCP request is checked through it, all from the MCP server's IP.
+app.use(['/oauth/register', '/oauth/authorize', '/oauth/token', '/oauth/revoke', '/oauth/requests'], generalLimiter);
 
 // Body Parsers (Increased limit to 10mb for image/signature uploads)
 app.use(express.json({ limit: '10mb' }));
@@ -133,6 +140,11 @@ app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/integrations', integrationRoutes);
+
+// OAuth authorization server for the MCP server
+app.get('/.well-known/oauth-authorization-server', oauthMetadata);
+app.use('/oauth', oauthRoutes);
 
 // 404 Route Handler
 app.use('*', (req, res) => {
@@ -156,8 +168,7 @@ app.listen(PORT, async () => {
   await initPrismaDb();
 
   // Initialize disposable email blocklist (remote fetch + local cache + weekly update schedule)
-  const { initBlocklist } = require('./src/services/blocklistService');
-  await initBlocklist();
+  await blocklistService.initBlocklist();
 });
 
-module.exports = app;
+export default app;

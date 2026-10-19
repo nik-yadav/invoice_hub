@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import * as uploadController from '../controllers/uploadController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const uploadController = require('../controllers/uploadController');
 
-router.post('/signature', uploadController.uploadSignature);
+router.post('/signature', authMiddleware, uploadController.uploadSignature);
 
-module.exports = router;
+export default router;

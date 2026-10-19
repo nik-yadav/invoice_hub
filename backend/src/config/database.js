@@ -1,5 +1,5 @@
-const { Sequelize } = require('sequelize');
-require('dotenv').config();
+import { Sequelize } from 'sequelize';
+import 'dotenv/config';
 
 const createSequelizeInstance = (useSqliteFallback = false) => {
   const dbUrl = process.env.DB_URL;
@@ -33,6 +33,5 @@ const switchToSqlite = () => {
   return sequelize;
 };
 
-module.exports = sequelize;
-module.exports.switchToSqlite = switchToSqlite;
-module.exports.createSequelizeInstance = createSequelizeInstance;
+export default sequelize;
+export { switchToSqlite, createSequelizeInstance };
