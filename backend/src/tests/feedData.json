@@ -3,7 +3,7 @@
     {
       "id": "2ef54da7-3b23-4c36-a9c5-12f07b215b7b",
       "email": "rajesh.sharma@example.com",
-      "password": "$2b$10$Kx7Jk9hZ3mQvY1nR8pL0AeF2sT4wU6xC8dV0bN2mK5jH7gI9oP1yq",
+      "password": "Test@123",
       "fullName": "Rajesh Sharma",
       "companyName": "Shree Balaji Transport",
       "phone": "+91 9219540831",
@@ -16,7 +16,7 @@
     {
       "id": "dbf31630-bcd6-4b7e-b7ea-28e94cc012bf",
       "email": "amit.verma@example.com",
-      "password": "$2b$10$Kx7Jk9hZ3mQvY1nR8pL0AeF2sT4wU6xC8dV0bN2mK5jH7gI9oP1yq",
+      "password": "",
       "fullName": "Amit Verma",
       "companyName": "National Roadways",
       "phone": "+91 9395310485",
@@ -29,7 +29,7 @@
     {
       "id": "36a51ddc-7990-4493-aff9-a973d1ae43aa",
       "email": "suresh.gupta@example.com",
-      "password": "$2b$10$Kx7Jk9hZ3mQvY1nR8pL0AeF2sT4wU6xC8dV0bN2mK5jH7gI9oP1yq",
+      "password": "Test@123",
       "fullName": "Suresh Gupta",
       "companyName": "Fastway Logistics",
       "phone": "+91 9249827706",
@@ -42,7 +42,7 @@
     {
       "id": "0a90e5b0-653e-4e4b-adb4-3cf46d4a42ae",
       "email": "vikram.singh@example.com",
-      "password": "$2b$10$Kx7Jk9hZ3mQvY1nR8pL0AeF2sT4wU6xC8dV0bN2mK5jH7gI9oP1yq",
+      "password": "Test@123",
       "fullName": "Vikram Singh",
       "companyName": "Om Sai Carriers",
       "phone": "+91 9826600539",
@@ -55,7 +55,7 @@
     {
       "id": "c4cb2bee-1495-4516-9a51-58cc4b465410",
       "email": "anil.yadav@example.com",
-      "password": "$2b$10$Kx7Jk9hZ3mQvY1nR8pL0AeF2sT4wU6xC8dV0bN2mK5jH7gI9oP1yq",
+      "password": "Test@123",
       "fullName": "Anil Yadav",
       "companyName": "Bharat Cargo Movers",
       "phone": "+91 9193349856",
