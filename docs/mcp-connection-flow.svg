@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Invoice Hub MCP connection flow</title>
+  <desc>Claude Code connects to the Invoice Hub MCP server with a per-user OAuth token. The MCP server checks the token with the backend and forwards read-only invoice requests to it.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#16213a"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-oauth" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="640" rx="20" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="40" y="62" fill="#f8fafc" font-size="30" font-weight="700">Invoice Hub × Claude</text>
+  <text x="40" y="94" fill="#94a3b8" font-size="16">MCP connection flow: sign in once, then Claude reads your invoices through a per-user, read-only token</text>
+
+  <!-- Legend -->
+  <g font-size="13" fill="#cbd5e1">
+    <line x1="40" y1="132" x2="80" y2="132" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="90" y="137">Tool request</text>
+    <line x1="200" y1="132" x2="240" y2="132" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow-oauth)"/>
+    <text x="250" y="137">OAuth sign-in (once, PKCE)</text>
+  </g>
+
+  <!-- Claude Code -->
+  <g>
+    <rect x="40" y="170" width="200" height="150" rx="14" fill="#1e293b" stroke="#d97757" stroke-width="2"/>
+    <circle cx="70" cy="202" r="12" fill="#d97757"/>
+    <text x="92" y="208" fill="#f8fafc" font-size="18" font-weight="700">Claude Code</text>
+    <text x="60" y="242" fill="#cbd5e1" font-size="13">MCP client</text>
+    <text x="60" y="264" fill="#cbd5e1" font-size="13">Stores &amp; refreshes</text>
+    <text x="60" y="282" fill="#cbd5e1" font-size="13">tokens itself</text>
+  </g>
+
+  <!-- MCP Server -->
+  <g>
+    <rect x="360" y="170" width="220" height="150" rx="14" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+    <text x="380" y="208" fill="#f8fafc" font-size="18" font-weight="700">MCP Server</text>
+    <text x="380" y="230" fill="#7dd3fc" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">:4000/mcp</text>
+    <rect x="380" y="244" width="120" height="24" rx="6" fill="#0f172a" stroke="#334155"/>
+    <text x="390" y="261" fill="#e2e8f0" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">list_invoices</text>
+    <rect x="380" y="276" width="104" height="24" rx="6" fill="#0f172a" stroke="#334155"/>
+    <text x="390" y="293" fill="#e2e8f0" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">get_invoice</text>
+  </g>
+
+  <!-- Backend -->
+  <g>
+    <rect x="700" y="170" width="250" height="150" rx="14" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+    <text x="720" y="208" fill="#f8fafc" font-size="18" font-weight="700">Backend API</text>
+    <text x="720" y="230" fill="#c4b5fd" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">:3001 Express + Prisma</text>
+    <text x="720" y="258" fill="#cbd5e1" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/oauth/authorize · token</text>
+    <text x="720" y="276" fill="#cbd5e1" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/oauth/introspect</text>
+    <text x="720" y="300" fill="#cbd5e1" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/api/v1/integrations/invoices</text>
+  </g>
+
+  <!-- Database -->
+  <g>
+    <ellipse cx="1155" cy="192" rx="80" ry="18" fill="#1e293b" stroke="#34d399" stroke-width="2"/>
+    <path d="M1075 192 V298 A80 18 0 0 0 1235 298 V192" fill="#1e293b" stroke="#34d399" stroke-width="2"/>
+    <ellipse cx="1155" cy="192" rx="80" ry="18" fill="#243247" stroke="#34d399" stroke-width="2"/>
+    <text x="1155" y="238" fill="#f8fafc" font-size="17" font-weight="700" text-anchor="middle">PostgreSQL</text>
+    <text x="1155" y="260" fill="#cbd5e1" font-size="12" text-anchor="middle">invoices · api_keys</text>
+    <text x="1155" y="278" fill="#cbd5e1" font-size="12" text-anchor="middle">api_audit_logs</text>
+  </g>
+
+  <!-- Request path -->
+  <g font-size="12" fill="#cbd5e1" text-anchor="middle">
+    <line x1="244" y1="245" x2="354" y2="245" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="300" y="226">Bearer ih_…</text>
+    <text x="300" y="268">tools/call</text>
+
+    <line x1="584" y1="245" x2="694" y2="245" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="640" y="212">introspect</text>
+    <text x="640" y="228">(60 s cache)</text>
+    <text x="640" y="268">GET invoices</text>
+
+    <line x1="954" y1="245" x2="1069" y2="245" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="1010" y="228">scoped to</text>
+    <text x="1010" y="268">your user</text>
+  </g>
+
+  <!-- Backend middleware chain -->
+  <g font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#e2e8f0">
+    <text x="990" y="352" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12">Every integration request passes:</text>
+    <rect x="990" y="362" width="76" height="24" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-opacity="0.6"/>
+    <text x="1028" y="378" text-anchor="middle">auditLog</text>
+    <rect x="1074" y="362" width="92" height="24" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-opacity="0.6"/>
+    <text x="1120" y="378" text-anchor="middle">apiKeyAuth</text>
+    <rect x="990" y="394" width="130" height="24" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-opacity="0.6"/>
+    <text x="1055" y="410" text-anchor="middle">invoices:read</text>
+    <rect x="1128" y="394" width="112" height="24" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-opacity="0.6"/>
+    <text x="1184" y="410" text-anchor="middle">60 req / min</text>
+  </g>
+
+  <!-- Sign-in page -->
+  <g>
+    <rect x="360" y="450" width="220" height="104" rx="14" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+    <text x="380" y="486" fill="#f8fafc" font-size="18" font-weight="700">Sign-in page</text>
+    <text x="380" y="508" fill="#fcd34d" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">mcp-frontend :3000</text>
+    <text x="380" y="534" fill="#cbd5e1" font-size="13">Sign in &amp; allow access</text>
+  </g>
+
+  <!-- OAuth path -->
+  <g font-size="12" fill="#fcd34d">
+    <path d="M140 324 V502 H354" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow-oauth)"/>
+    <text x="156" y="470">1 · /oauth/authorize</text>
+    <text x="156" y="486">opens your browser</text>
+
+    <path d="M584 502 H825 V324" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrow-oauth)"/>
+    <text x="600" y="470">2 · approve</text>
+    <text x="600" y="486">one-time code</text>
+
+    <path d="M800 324 V585 H110 V324" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="7 5" stroke-opacity="0.75" marker-end="url(#arrow-oauth)"/>
+    <text x="455" y="604" text-anchor="middle">3 · /oauth/token → ih_ access token (1 h) + refresh token (30 days), rotated on refresh</text>
+  </g>
+
+  <!-- Footer chips -->
+  <g font-size="13" fill="#e2e8f0">
+    <rect x="990" y="450" width="250" height="32" rx="16" fill="#0f172a" stroke="#334155"/>
+    <text x="1115" y="471" text-anchor="middle">Read-only: no create / update / delete</text>
+    <rect x="990" y="492" width="250" height="32" rx="16" fill="#0f172a" stroke="#334155"/>
+    <text x="1115" y="513" text-anchor="middle">Token only sees its owner's invoices</text>
+    <rect x="990" y="534" width="250" height="32" rx="16" fill="#0f172a" stroke="#334155"/>
+    <text x="1115" y="555" text-anchor="middle">MCP server holds no keys, no DB access</text>
+  </g>
+</svg>

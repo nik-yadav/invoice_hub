@@ -1,12 +1,15 @@
 import { prisma } from '../config/prisma.js';
 import feedJsonData from './feedData.json' with { type: 'json' };
 
+import bcrypt from 'bcryptjs';
+
 async function run() {
   console.log('🌱 Starting database feed...');
 
   try {
     // 1. Users (Parent)
     for (const u of feedJsonData.users) {
+      u.password = await bcrypt.hash(u.password, 12);
       await prisma.user.upsert({
         where: { id: u.id },
         update: {
@@ -15,6 +18,7 @@ async function run() {
         },
         create: {
           ...u,
+          password: u.password,
           isVerified: u.isVerified !== undefined ? u.isVerified : true,
           isActive: u.isActive !== undefined ? u.isActive : true,
           createdAt: u.createdAt ? new Date(u.createdAt) : undefined,
