@@ -6,7 +6,7 @@ import { supabase } from '../config/supabase.js';
  */
 export const uploadSignature = async (req, res, next) => {
   try {
-    const { image, file_name } = req.body;
+    const { image } = req.body;
 
     if (!image) {
       return res.status(400).json({
@@ -17,7 +17,9 @@ export const uploadSignature = async (req, res, next) => {
 
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    const fileName = file_name || `signature_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+    // Server-generated name inside the user's own folder: clients cannot pick a path
+    // and overwrite someone else's file.
+    const fileName = `${req.user.id}/signature_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
     const bucketName = process.env.SUPABASE_SIGNATURE_BUCKET || 'signatures';
 
     let publicUrl = image;
@@ -27,7 +29,7 @@ export const uploadSignature = async (req, res, next) => {
         .from(bucketName)
         .upload(fileName, buffer, {
           contentType: 'image/png',
-          upsert: true,
+          upsert: false,
         });
 
       if (error) {
